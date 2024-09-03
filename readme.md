@@ -397,3 +397,21 @@ try..catch의 catch 구문에 전달하는 error도 블록 스코프이다.
 >
 > 위 처럼 입력값이 있고 하나 이상의 값을 반환하면 프로시저로 볼 수 있다.
 > 함수와 같은 개념으로 볼 수 있음
+
+- 함수 사용방법
+
+1.  함수 선언 (함수 선언문) 방식
+
+```javascript
+function awesomeFunction(collThings) {
+  // ... 중략
+  return amazingStuff;
+}
+```
+
+- 위와 같은 방식을 함수 선언 또는 함수 선언문(function declaration)이라고 함
+  ??? 함수 선언이란 이름은 이 함수가 다른 문의 표현식이 아니라 문 자체이기 떄문에 붙게됨?? 무슨 말인지 이해 안됨;;;
+
+- 함수 선언으로 정의한 함수 awesomeFunction은 식별자 awesomeFunction과 실제 함수를 나타내는 값의 연관이 코드 실행 단계가 아닌 컴파일 단계에서 맺어짐
+
+  2. 함수 표현식 방식
