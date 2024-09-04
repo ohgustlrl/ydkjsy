@@ -845,9 +845,10 @@ forBlog.print();
 > </details>
 > <br/>
 > <details>
->  <summary>Q5. JS에서 원시타입에는 어떤게 있나요?
+>  <summary>Q5. JS의 변수 선언 시 var과 let의 접근 범위는 어떻게 되나요?
 > </summary>
 > <br/>
->  <p>A5. JS의 원시 타입 종류 - string, number, boolean, null, undefined, symbol, bigint</p>
+>  <p>A5. 함수스코프, 블록스코프</p>
+> <p>2.3 변수 선언과 사용 60P 참조</p> 
 > </details>
 > <br/>
