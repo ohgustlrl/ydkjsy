@@ -415,3 +415,340 @@ function awesomeFunction(collThings) {
 - 함수 선언으로 정의한 함수 awesomeFunction은 식별자 awesomeFunction과 실제 함수를 나타내는 값의 연관이 코드 실행 단계가 아닌 컴파일 단계에서 맺어짐
 
   2. 함수 표현식 방식
+
+```javascript
+let awesomeFunction = function (coolThings) {
+  // ...
+  return amazingStuff;
+};
+```
+
+- 함수 표현식으로 선언된 함수는 식별자(위 예제에서는 awesomeFunction)가 코드가 실행되기 전까지는 관계를 맺지 않는다.
+
+**JS에서 함수는 할당 가능하고 어디든 전달 가능한 값이라는 특징이 매우 중요**
+
+- 함수형 패러다임을 지원하는 언어에서는 함수를 값으로 취급하는게 필수
+
+매개변수(parameter)를 통해 함수에 값을 전달할 수 있다.
+
+```javascript
+function greeting(myName) {
+  console.log(`${myName} 님 안녕하세요!`);
+}
+
+greeting('폴'); //폴 님 안녕하세요!
+```
+
+- 위 예시에서 myName이 매개변수이며 함수 내에서 지역 변수 역할을 함
+- 함수는 0개부터 원하는 개수까지 원하는 만큼 매개변수를 받을 수 있도록 정의할 수 있음
+- 함수를 호출할 때 인수(argument)라 부르는 값(예시에서는 "폴")을 매개변수에 할당한다.
+- 함수는 오로지 한 개의 값만 반활할 수 있음, 여러개를 반환하고 싶다면 객체나 배열로 감싸 반환
+- 함수는 값이므로 함수를 객체의 프로퍼티로 할당할 수 있음
+
+#### 2.5 비교
+
+#### 2.5.1 같음에 대한 고찰
+
+- js에서 같음을 비교할 때는 **'정확하게'** 일치하는지를 따지기도 하지만 **'아주 유사'**하다거나 **'교환 가능'**한지와 같이 좀 더 넓은 관점에서 비교하는 떄도 있다.
+
+**일치 비교**  
+-일치 연산자(===)  
+ 단 일치 연산자가 특수한 값인 NaN(Not a Number) 이나 -0과 함꼐 사용되면 예상과 다르게 작동할 수 있다.
+
+```javascript
+NaN === NaN; // false
+0 === -0; // true
+```
+
+- 일치 연산자는 NaN이나 -0과 함께 사용하지 않는게 최선  
+  NaN을 비교할 때는 Number.isNaN() 을 사용  
+  -0과 비교할 때는 Object.is() 를 사용  
+  Object.is()는 NaN과의 비교에서도 사용 가능  
+  따라서 일치 연산자만으로는 **"아주 정확하게"** 비교할 수 없다.
+
+- 객체 비교
+
+```javascript
+[1,2,3] === [1,2,3]; //false
+{a:42} === {a:42}    //false
+(x => x *2) === (x => x *2) //false
+```
+
+- 일치 비교는 값의 본질(nature)이나 내용(content)을 비교
+- 비교 대상이 객체인 경우 값의 본질이나 내용이 아닌 **구조적 일치**를 비교
+- 객체 끼리 비교할 때 비교 연산자가 구조적 일치를 판단하지 않고 **독자성 일치**를 비교
+- js객체는 참조에 의해 고정되며 참조 복사본을 사용해 할당, 전달 됨, 그리고 참조(독자성)을 대상으로 일치 비교가 일어남
+
+```javascript
+let x = [1, 2, 3]; //false
+
+// 참조를 복사한 값이 할당되기 떄문에 변수 y는 x의 복사본이 아니다.
+// 변수 y는 x와 '같은' 배열을 참조한다.
+// 참조란 메모리에 할당된 영역
+
+let y = x;
+
+y === x; //true
+y === [1, 2, 3]; //false
+x === [1, 2, 3]; //false
+```
+
+**참조의 독자성** 중요
+
+> 일단 책에서 참조에 대한 부분이 약간은 설명이 부족한 듯 싶어 추가
+>
+> ```javascript
+> let x = [1, 2, 3]; //메모리 주소 0x001 할당되고 x는 메모리주소를 참조
+> let y = x; // y는 위에 할당 된 x의 메모리 주소값을 참조하게 됨
+>
+> y === x; //이는 메모리 주소값이 같은 곳을 참조하기 떄문에 true
+> ```
+>
+> ```javascript
+> let a = [1, 2, 3]; // 메모리 주소 0x001 할당
+> let b = [1, 2, 3]; // 메모리 주소 0x002 할당
+> // a와 b는 객체의 값은 같으나 참조하는 메모리 주소가
+> // 다르기 때문에 일치 비교연산 시 false를 반환하게 됨
+> ```
+
+- js에는 객체 구조가 같은지 비교할 방법이 없음, 같은 것을 참조하는지만 비교할 수 있음
+- js에서는 객체 구조를 비교할 방법을 제공하지 않는다.
+
+#### 2.5.2 강제 변환
+
+- 한 타입의 값이 다른 타입의 값으로 변하는 걸 의미
+- 타입강제 변환은 js를 지탱하는 커다란 기둥 중 하나  
+  **동등 비교** -동등 연산자(==)는 피연산자의 타입을 비교한다. 단, 피연산자의 타입이 다른 경우 동등 연산자는 비교 이전에 강제로 타입을 맞추는 작업을 수행한다. (빡침포인트 1)  
+  브랜던아이크(js창시자)가 동등 연산자 설계에는 큰 실수가 있다고 한탄한 바 있다고 함..후..
+
+- 동등 연사자는 숫자형 피연산자를 선호함  
+  예를 들어 42 == "42" 를 비교할 때 문자열을 숫자형으로 타입을 강제 변환하거나 1 == true 일 때 true를 1로 변환하는 형태..
+
+- < , > , <= , >= 도 타입이 같으면 괜찮은데 다르면 강제 타입변환...(빡침포인트 2)
+- 피연산자가 모두 문자열일 경우 알파벳순으로 문자열을 비교
+
+```javascript
+let x = '10';
+let y = '9';
+
+x < y; // true
+
+// 이유 ? 문자열 "10"의 첫 문자는 "1" 이고, "9" 첫 번쨰 문자는 "9" 인데 js는 유니코드 값으로 비교하기 때문에 "1(유니코드 값: 49)"이고 "9(유니코드 값:57)" 이기 때문에 true
+```
+
+- 이런 강제 타입 변환 때문에 비교 연산자의 작동 방식을 제대로 배우고 받아들이는게 중요
+
+#### 2.6 코드 구조화 패턴
+
+- js 생태계 전반에 걸쳐 코드를 구조화하는 패턴은 크게 클래스와 모듈 두 가지가 있음
+- 상호 배타적인 패턴이 아니기 때문에 두 패턴 모두를 사용함
+
+#### 2.6.1 클래스
+
+- 사용자가 정의한 데이터 '타입' 으로 데이터와 데이터를 조작하는 동작이 들어감, 다만 클래스는 사용자 정의 데이터 타입이 어떻게 동작하는지 정의하지만 구체적인 값은 아니며, 구체적인 값이 필요하다면 new 키워드를 통해 인스턴스를 만들어야 함.
+
+- 클래스가 없어도 동일한 결과물을 만들수 있으나, 클래스를 사용하면 체계적이고 가독성이 좋은 코드를 만들 수 있다.
+
+- 클래스 지향(객체 지향) 설계는 **상속**과 **다형성**을 뺴놓고 생각할 수 없다.
+
+**상속**
+
+- js에서 새로운 클래스를 정의할 때 기존의 클래스를 상속 받아 기능을 확장시킬 수 있는데 이때 사용하는 키워드는 **extends** 이다
+
+**다형성**
+
+- 상속받은 메서드와 새롭게 정의한 메서드의 이름이 동일하고 공존할 수 있는 것을 의미한다.
+
+> ex) 상속과 다형성을 확인할 수 있는 예제 코드
+>
+> ```javascript
+> // 부모 클래스
+> class Publication {
+>   constructor(title, author, pubDate) {
+>     this.title = title;
+>     this.author = author;
+>     this.pubDate = pubDate;
+>   }
+>
+>   print() {
+>     console.log(`
+>       제목 : ${this.title},  
+>       저자 : ${this.author},  
+>       발행일 : ${this.pubDate}  
+>     `);
+>   }
+> }
+> ```
+>
+> ```javascript
+> // 자식 클래스 (부모 클래스를 상속 받았으니까)
+> class Book extends Publication {
+>   constructor(bookDetails) {
+>     super(bookDetails.title, bookDetails.author, bookDetails.pubData);
+>     this.publisher = bookDetails.publisher;
+>     this.ISBN = bookDetails.ISBN;
+>   }
+>
+>   print() {
+>     super.print();
+>     console.log(`
+>       출판사 : ${this.publisher},
+>       ISBN: ${this.ISBN}
+>     `);
+>   }
+> }
+>
+> class BlogPost extends Publication {
+>   constructor(title, author, pubDate, URL) {
+>     super(title, author, pubDate);
+>     this.URL = URL;
+>   }
+>
+>   print() {
+>     super.print();
+>     console.log(`URL: ${this.URL}`);
+>   }
+> }
+> ```
+>
+> ```javascript
+> //자식클래스를 인스턴스화해서 사용하기
+> let YDKJSY = new Book({
+>   title: "You Don't Know JS Yet",
+>   author: '카일 심슨',
+>   publishedOn: '2020년 1월',
+>   publisher: '독립 출판',
+>   ISBN: '979-8602477429',
+> });
+>
+> YDKJSY.print();
+>
+> // 결과
+> // 제목 : You Don't Know JS Yet
+> // 저자 : 카일 심슨
+> // 발행일 : 2020년 1월
+> // 출판사 : 독립 출판
+> // ISBN : 979-8602477429
+>
+> let forBlog = new BlogPost(
+>   'For and against let',
+>   '카일 심슨',
+>   '2024년 12월 31일',
+>   'https://...'
+> );
+>
+> forBlog.print();
+>
+> // 결과
+> // 제목 : For and against let
+> // 저자 : 카일 심슨
+> // 발행일 : 2024년 12월 31일
+> // URL : https://...
+> ```
+
+??문제 클래스에서 정의 된 함수는 뭐라고 할까요?
+
+#### 2.6.2 모듈
+
+- 클래스와 마찬가지고 논리적 단위 기준으로 데이터와 행동을 그룹화 하는데 목적이 있음
+- 가장 큰 차이점은 문법
+- ES6에서 공식적으로 추가됨 이전까진 자체적으로 패턴을 만들어 활용함
+
+**클래식 모듈**
+
+- 최소한 한 번 이상 실행되는 외부 함수
+- 모듈 인스턴스 내부의 숨겨진 데이터를 대상으로 작동하는 함수가 있는 '인스턴스'를 반환
+- 클래식 모듈은 **단순한 함수**이기도 하고 함수를 호출하면 모듈 인스턴스가 생성되기 떄문에 클래식 모듈 인스턴스에 있는 함수를 **모듈 팩토리** 라고 설명하기도 함
+
+```javascript
+//모듈팩토리 함수(클래식 함수) 정의
+function Publication(title, author, pubDate) {
+  let publicAPI = {
+    print() {
+      console.log(`
+        제목 : ${this.title},  
+        저자 : ${this.author},  
+        발행일 : ${this.pubDate}  
+      `);
+    },
+  };
+
+  return publicAPI;
+}
+
+function Book(bookDetails) {
+  let pub = Publication(
+    bookDetails.title,
+    bookDetails.author,
+    bookDetails.publishedOn
+  );
+
+  let publicAPI = {
+    print() {
+      pub.print();
+      console.log(`
+        출판사 : ${bookDetails.publisher}
+        ISBN : ${bookDetails.ISBN}
+      `);
+    },
+  };
+
+  return publicAPI;
+}
+
+function BlogPost(title, author, pubDate, URL) {
+  let pub = Publication(title, author, pubDate);
+
+  let publicAPI = {
+    print() {
+      pub.print();
+      console.log(URL);
+    },
+  };
+
+  return publicAPI;
+}
+```
+
+```javascript
+//모듈 팩토리(클래식 모듈) 함수를 인스턴스화해서 사용하기
+
+let YDKJSY = Book({
+  title: "You Don't Know JS Yet",
+  author: '카일 심슨',
+  publishedOn: '2020년 1월',
+  publisher: '독립 출판',
+  ISBN: '979-8602477429',
+});
+
+YDKJSY.print();
+
+// 결과
+// 제목 : You Don't Know JS Yet
+// 저자 : 카일 심슨
+// 발행일 : 2020년 1월
+// 출판사 : 독립 출판
+// ISBN : 979-8602477429
+
+let forBlog = BlogPost(
+  'For and against let',
+  '카일 심슨',
+  '2024년 12월 31일',
+  'https://...'
+);
+
+forBlog.print();
+
+// 결과
+// 제목 : For and against let
+// 저자 : 카일 심슨
+// 발행일 : 2024년 12월 31일
+// URL : https://...
+
+//결과는 당연히 클래스와 같음 차이는 new키워드가 없을뿐
+```
+
+- 클래스는 메서드와 데이터를 객체 인스턴스에 저장하며, 메서드와 데이터에 접근하려면 접두사 this.를 사용해야 함
+- 모듈에서는 this.없이 도 스코프 내 식별자 역할을 하는 변수를 사용해 메서드와 데이터에 접근
+
+**ES 모듈**
