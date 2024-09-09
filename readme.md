@@ -27,6 +27,12 @@
       - [2.6 코드 구조화 패턴](#26-코드-구조화-패턴)
       - [2.6.1 클래스](#261-클래스)
       - [2.6.2 모듈](#262-모듈)
+    - [CHAPTER 3. 자바스크립트 뿌리 파헤치기](#chapter-3-자바스크립트-뿌리-파헤치기)
+      - [3.1 이터레이션](#31-이터레이션)
+      - [3.1.1 이터레이터 소비하기](#311-이터레이터-소비하기)
+      - [3.1.2 이터러블](#312-이터러블)
+      - [3.2 클로저](#32-클로저)
+      - [3.3 this 키워드](#33-this-키워드)
 
 ## Part 1
 
@@ -852,3 +858,213 @@ forBlog.print();
 > <p>2.3 변수 선언과 사용 60P 참조</p> 
 > </details>
 > <br/>
+
+### CHAPTER 3. 자바스크립트 뿌리 파헤치기
+
+#### 3.1 이터레이션
+
+- 이터레이터 패턴은 데이터 전체를 한꺼번에 처리하기보다 데이터를 일정 단위로 쪼개고, 이 조각들을 차례대로 순회하며 점진적으로 처리하면 좀 더 범용적이고 유용할 거라는 아이디어에서 출발함
+- ES6 명세서에 JS 내장 문법을 통해 이터레이터 패턴을 구현하는 구체적인 프로토콜이 추가 됨
+  > 1. 이터레이터 패턴 프로토콜에서 next() 메서드는 **이터레이터 리절트(iterator result)** 라는 객체를 반환
+  > 2. 이터레이터 리절트 객체에는 value와 done 프로퍼티가 존재
+  > 3. 반복 작업이 끝나면 done 프로퍼티에 true를 할당, 반대로 끝나지 않은 경우 false를 할당하여 반복작업 처리
+
+```javascript
+//이터레이터 내장문법 사용 예제
+function makeRangeIterator(start = 0, end = Infinity, step = 1) {
+  var nextIndex = start;
+  var n = 0;
+
+  var rangeIterator = {
+    next: function () {
+      var result;
+      if (nextIndex < end) {
+        result = { value: nextIndex, done: false };
+      } else if (nextIndex == end) {
+        result = { value: n, done: true };
+      } else {
+        result = { done: true };
+      }
+      nextIndex += step;
+      n++;
+      return result;
+    },
+  };
+  return rangeIterator;
+}
+
+//위의 반복자를 사용하면 아래와 같다.
+
+var it = makeRangeIterator(1, 4);
+
+var result = it.next();
+while (!result.done) {
+  console.log(result.value); // 1 2 3
+  result = it.next();
+}
+
+console.log('Iterated over sequence of size: ', result.value);
+```
+
+출처 : MDN - https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Iterators_and_generators
+
+#### 3.1.1 이터레이터 소비하기
+
+- 위의 내장 문법과 같은 방식으로 이터레이터를 처리하기엔 다소 복잡
+- 간단하게 1.for...of 반복문, 2.표현식 ...(전개 연산자)를 사용하여 이터레이터를 소비(처리)할 수 있다.
+
+#### 3.1.2 이터러블
+
+- JS의 이터러블 객체 = 배열, 문자열,map, set 등이 있다.
+
+  > JS에서 이터러블 객체들은 2장에서 잠깐 스쳐지나간 Symbol 이라는 원시타입으로 iterator 라는 메서드를 가지고 있고, 2장에서 값의 타입을 확인하는 typeof를 통해서 이터레이터 메서드를 확인할 수 있다. 아래 예시와 같이 typof로 Symbol.iterator를 로그로 찍어보면 function 을 반환하므로 이터레이터 메서드를 가지고 있다는 것을 유추할 수 있다.
+
+  ```javascript
+  //배열
+  const arr = [1, 2, 3];
+  console.log(typeof arr[Symbol.iterator]); // 'function'
+
+  // 문자열
+  const str = 'hello';
+  console.log(typeof str[Symbol.iterator]); // 'function'
+
+  // Map
+  const map = new Map();
+  console.log(typeof map[Symbol.iterator]); // 'function'
+
+  // Set
+  const set = new Set();
+  console.log(typeof set[Symbol.iterator]); // 'function'
+
+  // TypedArray (예: Uint8Array)
+  const typedArray = new Uint8Array([1, 2, 3]);
+  console.log(typeof typedArray[Symbol.iterator]); // 'function
+
+  // arguments 객체
+  function exampleFunction() {
+    console.log(typeof arguments[Symbol.iterator]); // 'function'
+  }
+  exampleFunction();
+
+  // NodeList (예: document.querySelectorAll의 결과)
+  const nodeList = document.querySelectorAll('div');
+  console.log(typeof nodeList[Symbol.iterator]); // 'function'
+  ```
+
+- Map(맵)은 모든 자료형을 키로 허용하는 키-값(key-value) 형태인데, 기본 이터레이터를 지원한다. 맵의 내장 메서드 entries, values 등을 이용할 수 있다.
+- values는 이터러블의 값만 반환,
+- entries는 키와 값을 모두 반환할 수 있다.
+
+```javascript
+//Map 사용 및 이터러블 사용 예제
+var map1 = new Map();
+map1.set('a', 1);
+map1.set('b', 2);
+map1.set('c', 3);
+
+for (let value of map1.values()) {
+  console.log(value);
+}
+
+for (let [keys, value] of map1.entries()) {
+  console.log(`${keys} : ${value}`);
+}
+
+// values 결과값
+// 1
+// 2
+// 3
+
+// entries 결과값
+// "a : 1"
+// "b : 2"
+// "c : 3"
+```
+
+| 특징          | 이터러블(iterable)                                                                                                                                           | 이터레이터(Iterator)                                                                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **정의**      | - Symbol.iterator 메서드를 가진 객체                                                                                                                         | - next() 메서드를 가진 객체                                                                                                                              |
+| **역할**      | - 이터레이터를 반환하는 역할                                                                                                                                 | - 이터러블 객체의 요소를 순회하는 역할                                                                                                                   |
+| **사용 목적** | - 이터레이터를 생성하여 반복 가능하게 함                                                                                                                     | - 반복을 수행하고, 각 단계에서 요소를 반환                                                                                                               |
+| **예시**      | - 배열, 문자열, Map, Set 등                                                                                                                                  | - iterable\[Symbol.iterator]()의 반환값                                                                                                                  |
+| **언어적**    | "Iterable"은 "iterate"라는 동사의 형용사형입니다. "Iterate"는 "반복하다, 순회하다"라는 뜻을 가지고 있으며, "Iterable"은 "반복 가능한"이라는 의미를 가집니다. | "Iterator"는 "iterate"에 "or"가 붙어서 만들어진 명사형입니다. "-or"는 "~하는 사람/것"을 의미하므로, "Iterator"는 "반복하는 사람/것"이라는 뜻을 가집니다. |
+
+#### 3.2 클로저
+
+- js에만 있는 개념은 아님, 여러 주요 프로그래밍 언어에서 사용하는 기능
+- 클로저란 ? 함수가 정의된 스코프가 아닌 다른 스코프에서 함수가 실행되더라도, 스코프 밖에 있는 변수를 기억하고 이 외부 변수에 계속 접근할 수 있는 경우를 의미 (하..어렵네 문장으로 표현된거..;;)
+
+**특징**
+
+1. 함수의 타고난 특징, 객체는 클로저가 되지 않지만, 함수는 자연스럽게 클로저가 됨
+2. 함수를 해당 함수가 정의된 스코프가 아닌 다른 스코프에서 실행하면 클로저를 볼 수 있음
+
+```javascript
+//클로저의 예시
+function greeting(msg) {
+  return function who(name) {
+    console.log(`${name}님, ${msg}!`);
+  };
+}
+
+let hello = greeting('안녕하세요');
+let howdoyou = greeting('잘 지내시죠?');
+hello('은도'); //은도님, 안녕하세요
+hollo('슈슉'); //슈슉님, 안녕하세요
+howdoyou('망푸'); //망푸님, 잘 지내시죠?
+howdoyou('호두집사'); //호두집사님, 잘 지내시죠?
+
+//클로저의 또 다른 예시
+function counter(step = 1) {
+  var count = 0;
+  return fucntion increaseCount() {
+    count = count + step;
+    return count;
+  };
+}
+
+var incBy1 = counter(1);
+var incBy2 = counter(3);
+
+incBy1();
+incBy1();
+
+incBy3();
+incBy3();
+incBy3();
+```
+
+> 클로저를 이해하기 위해 이것저것 찾다보니 나오던 관련된 기타 개념들
+>
+> \* JS에서의 스코프 - 함수 스코프 , 블럭스코프 두 가지가 있음
+>
+> \* 렉시컬 스코프 - 코드가 작성된 위치에 따라, 변수의 유효범위(Scope)가 결정된다는 것을 의미 - 조금 더 쉽게는 함수스코프와 블럭스코프의 유효범위를 결정짓는 규칙 또는 매커니즘 같은 것
+>
+> \* 보통 함수는 정의되고 호출이 되면 종료가 되고 함수에 전달된 인자는 GC(가비지컬렉션)이 동작되어 메모리에서 제거된다.
+>
+> \* 외부 스코프에서 정의 된 변수나 또는 매개변수로 정의된 값을 내부함수가 참조할 때 클로저가 형성됨 - 이 부분이 렉시컬 스코프의 의해서 가능해짐
+>
+> \* 클로저는 함수형 패러다임에서 매우 중요한 역할을 함
+>
+> \* 클로저는 GC가 동작하지 않기 때문에 메모리 누수를 신경써야 한다.
+
+- 클로저는 콜백과 같이 비동기 작업을 수행하는 코드에 가장 흔히 찾아 볼 수 있다.
+- 클로저는 외부 스코프가 꼭 함수여야 하는건 아니다.
+  > 클로저는 내부 함수가 외부 스코프(렉시컬 스코프)에 있는 변수를 참조하면 형성, 외부 스코프가 함수든, 블록이든, 전역이든 관계없이 내부 함수가 외부의 변수를 "기억" 하고 접근할 수 있게 한다는 점
+
+```javascript
+//글로벌 스코프를 사용한 클로저
+let globalVar = '나는 전역 변수입니다.';
+
+function outer() {
+  console.log(globalVar); // 내부 함수가 전역 스코프의 변수를 참조함
+}
+
+outer(); // 출력: "나는 전역 변수입니다."
+```
+
+\* 자세한건 뒤에가서 더 공부하는걸로...;;;;;
+
+#### 3.3 this 키워드
+
+- this는 함수의 정의에 종속되어 결정되는 변치 않는 특성이 아니라 함수를 호출할 때마다 결정되는 동적인 특성이다.
