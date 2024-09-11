@@ -33,6 +33,8 @@
       - [3.1.2 이터러블](#312-이터러블)
       - [3.2 클로저](#32-클로저)
       - [3.3 this 키워드](#33-this-키워드)
+      - [3.4 프로토타입](#34-프로토타입)
+      - [3.4.1 객체 연결 장치](#341-객체-연결-장치)
 
 ## Part 1
 
@@ -1067,4 +1069,96 @@ outer(); // 출력: "나는 전역 변수입니다."
 
 #### 3.3 this 키워드
 
-- this는 함수의 정의에 종속되어 결정되는 변치 않는 특성이 아니라 함수를 호출할 때마다 결정되는 동적인 특성이다.
+- this는 함수의 정의에 종속되어 결정되는 변치 않는 특성이 아니라 함수를 호출할 때마다 결정되는 동적인 특성이다.  
+   \* 실행 컨텍스트란 ? 함수가 실행되는 동안 함수에서 사용할 수 있는 프로퍼티를 가진 유형의 객체  
+   더 나아가서 실행 컨텍스트는 더 많은 것을 내포하나 일단 이 장에서는 이 정도까지만으로 이해
+- this는 함수 자신이 아니다
+
+```javascript
+//구체적인 컨텍스트를 제공하지 않은 형태의 this 사용 예시
+function classroom(teacher) {
+  return function study() {
+    console.log(`${teacher} 선생님이 ${this.topic}을(를) 공부하라고 했습니다.`);
+  };
+}
+
+var assignment = classroom('카일');
+
+assignment(); //카일 선생님이 undefined을(를) 공부하라고 했습니다.
+```
+
+- this가 있는 함수는 실행 컨텍스트에 종속된다.
+- 구체적인 컨텍스트를 지정하지 않고 실행하게 되면 기본 컨텍스트가 전역 객체(브라우저에서는 window 객체)가 된다. 위 예제는 구체적인 컨텍스트가 지정되지 않았기에 this가 window객체를 가르키고 window 객체에는 topic이 없어 undefined가 발생한다.
+
+```javascript
+//구체적인 컨텍스트를 제공한 형태의 this 사용 예시
+function classroom(teacher) {
+  return function study() {
+    console.log(`${teacher} 선생님이 ${this.topic}을(를) 공부하라고 했습니다.`);
+  };
+}
+
+var assignment = classroom('카일');
+
+var homework = {
+  topic: 'js',
+  assignment, //객체의 키와 프로퍼티가 같아서 축약
+};
+
+homework.assignment(); //카일 선생님이 js을(를) 공부하라고 했습니다.
+```
+
+#### 3.4 프로토타입
+
+- 객체, 구체적으로 프로퍼티에 접근할 때 일어나는 동작과 관련된 특징
+- 두 객체를 연결하는 연결 장치
+- 프로토타입을 통해 연결된 일련의 객체는 **프로토타입 체인** 이라고 부름
+
+**프로토타입의 예제**
+
+```javascript
+var homework = {
+  topic: 'js',
+};
+```
+
+▼ 아래는 homework 객체를 콘솔로그로 찍어 개발자도구의 콘솔에서 캡처한 이미지 / 기본 객체의 프로토타입을 확인할 수 있다.
+![homework 객체를 콘솔로그로 찍은 캡처 이미지](./prototype_ex.png)
+
+#### 3.4.1 객체 연결 장치
+
+- 객체의 프로토타입을 직접 정의하고 싶을 떄는 Object.create를 사용할 수 있다.
+
+```javascript
+var homework = {
+  topic: '수학',
+};
+
+var otherHomework = Object.create(homework);
+
+console.log('otherHomework 콘솔 로깅', otherHomework);
+```
+
+▼ 아래는 otherHomework 객체를 콘솔로그로 찍어 개발자도구의 콘솔에서 캡처한 이미지 / 기본 객체의 프로토타입 외에도 새로운 프로토타입이 생성됐고 내부에 topic이 들어가 있음을 확인할 수 있다.
+![otherHomework 객체를 콘솔로그로 찍은 캡처 이미지](./prototype_ex_Object_create.png)
+
+> 문제
+>
+> <details>
+>  <summary>Q1. this가 가리키는 것은 함수 자신이다? O / X
+> </summary>
+> <br/>
+>  <p>A1. X, this는 함수 자체에서의 정의가 아니라 호출할 때마다 결정된다.</p>
+> </details>
+> <br/>
+> <details>
+>  <summary>Q2. JS에서 백틱(`)으로 감싼 문자열에 변수표현식을 사용하는 방식을 뭐라고 하나요?
+> </summary>
+> <br/>
+>  <p>A2. 보간법</p>
+> </details>
+> <br/>
+
+```
+
+```
