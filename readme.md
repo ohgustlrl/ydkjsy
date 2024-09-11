@@ -35,6 +35,8 @@
       - [3.3 this 키워드](#33-this-키워드)
       - [3.4 프로토타입](#34-프로토타입)
       - [3.4.1 객체 연결 장치](#341-객체-연결-장치)
+      - [3.4.2 this 다시 보기](#342-this-다시-보기)
+      - [3.5 '왜?' 라고 질문하기](#35-왜-라고-질문하기)
 
 ## Part 1
 
@@ -812,7 +814,7 @@ forBlog.print();
 3. ES모듈을 인스턴스화하지 않아도 import 키워드를 사용해 가져오기만 하면 단일 인스턴스처럼 사용할 수 있다.  
    import 키워드를 사용해 처음 모듈을 가져온 순간 인스턴스가 생성되고, 동일한 모듈을 다른 곳에서 import 할 때는 이미 생성된 모듈의 참조(메모리 주소값)만 가져온다.
 
-> 문제
+> Chapter2 문제
 >
 > <details>
 >  <summary>Q1. JS에서 값은 크게 어떻게 나뉠까요?
@@ -954,8 +956,9 @@ console.log('Iterated over sequence of size: ', result.value);
   ```
 
 - Map(맵)은 모든 자료형을 키로 허용하는 키-값(key-value) 형태인데, 기본 이터레이터를 지원한다. 맵의 내장 메서드 entries, values 등을 이용할 수 있다.
-- values는 이터러블의 값만 반환,
-- entries는 키와 값을 모두 반환할 수 있다.
+- keys()는 키만 반환한다.
+- values()는 값만 반환한다.
+- entries()는 키와 값을 모두 반환할 수 있다.
 
 ```javascript
 //Map 사용 및 이터러블 사용 예제
@@ -1052,17 +1055,14 @@ incBy3();
 
 - 클로저는 콜백과 같이 비동기 작업을 수행하는 코드에 가장 흔히 찾아 볼 수 있다.
 - 클로저는 외부 스코프가 꼭 함수여야 하는건 아니다.
-  > 클로저는 내부 함수가 외부 스코프(렉시컬 스코프)에 있는 변수를 참조하면 형성, 외부 스코프가 함수든, 블록이든, 전역이든 관계없이 내부 함수가 외부의 변수를 "기억" 하고 접근할 수 있게 한다는 점
 
 ```javascript
-//글로벌 스코프를 사용한 클로저
-let globalVar = '나는 전역 변수입니다.';
-
-function outer() {
-  console.log(globalVar); // 내부 함수가 전역 스코프의 변수를 참조함
+//외부스코프가 함수가 아닌 클로저의 예제
+for (let i = 0; i < 3; i++) {
+  setTimeout(function () {
+    console.log(i); // 각각의 'i' 값에 접근
+  }, 100);
 }
-
-outer(); // 출력: "나는 전역 변수입니다."
 ```
 
 \* 자세한건 뒤에가서 더 공부하는걸로...;;;;;
@@ -1142,23 +1142,65 @@ console.log('otherHomework 콘솔 로깅', otherHomework);
 ▼ 아래는 otherHomework 객체를 콘솔로그로 찍어 개발자도구의 콘솔에서 캡처한 이미지 / 기본 객체의 프로토타입 외에도 새로운 프로토타입이 생성됐고 내부에 topic이 들어가 있음을 확인할 수 있다.
 ![otherHomework 객체를 콘솔로그로 찍은 캡처 이미지](./prototype_ex_Object_create.png)
 
-> 문제
+> TIP)  
+> Object.create(null)을 호출하면 어떤 객체도 연결되어 있지 않은 순수 독립 객체가 만들어지며 이런 객체가 필요한 특별한 경우가 있으니 알아두면 좋다.
+
+- js에서 프로토타입을 가지는 type들
+
+  1. 일반 객체 (object)
+  2. 배열 (array)
+  3. 함수 (function)
+  4. 정규 표현식 (regexp)
+  5. date 객체
+  6. error 객체
+
+- 원시타입은 프로토타입이 없지만 웃긴건 원시타입에 메서드를 사용할 수 있다? 찾아보니 원시타입은 직접적으로 프로토타입을 가지지지 않지만 js는 원시타입에 대해 객체처럼 동작할 수 있도록 **래퍼 객체(Wrapper Object)** 를 사용한다고 함
+
+```javascript
+//원시타입으로 메서드 호출하는 예제
+let str = 'hello';
+str.toUpperCase(); //HELLO
+```
+
+\* 실제로 위 예시에 있는 str를 콘솔로 찍오보면 프로토타입은 나오지 않고 hello만 보임  
+https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/String  
+하지만 위 링크(MDN 문서)에 들어가보면 문자열타입에 사용가능한 프로토타입 메서드들이 수두룩빽빽임ㅋ
+
+#### 3.4.2 this 다시 보기
+
+- 함수를 호출할 때 프로토타입을 통해 발생하는 상속과 this 를 함께 다루면 좋다.
+- 상당수의 다른 언어에서는 함수가 정의된 객체가 this의 대상이 되지만, js는 앞서 나왔듯이 함수가 실행되는 실행컨텍스트에 의해 this의 대상이 동적으로 변경된다. 이런 특징은 프로토타입을 통한 상속, 특히 class에서 상속을 가능하게 만드는 중요한 요소이다.
+
+#### 3.5 '왜?' 라고 질문하기
+
+좋은데...시간이...으읔...ㅠㅠ 어쩄든 중꺽마!
+
+> Chapter3 문제
 >
 > <details>
->  <summary>Q1. this가 가리키는 것은 함수 자신이다? O / X
+>  <summary>Q1. 이터레이터를 처리할 때 유용한 메서드는?
 > </summary>
 > <br/>
->  <p>A1. X, this는 함수 자체에서의 정의가 아니라 호출할 때마다 결정된다.</p>
+>  <p>A1. for...of, <br/><a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Statements/for...of"> MDN - for...of</a><br/>  
+> 또는 전개연산자(...) 도 맞는걸로(물론 메서드는 아니지만...ㅎㅎ)
+>
+> </p>
 > </details>
 > <br/>
 > <details>
->  <summary>Q2. JS에서 백틱(`)으로 감싼 문자열에 변수표현식을 사용하는 방식을 뭐라고 하나요?
+>  <summary>Q2. Map은 기본 이터레이터를 지원하는데 이 때 값만 반환받고 싶으면?
 > </summary>
 > <br/>
->  <p>A2. 보간법</p>
+>  <p>A2. values()를 사용한다.
+>  <br/>
+>  키만 반환할 땐 keys(), 키값 모두는 entries() 
+> </p>
 > </details>
 > <br/>
-
-```
-
-```
+> <details>
+>  <summary>Q3. this가 가리키는 것은 함수 자신이다? O / X
+> </summary>
+> <br/>
+>  <p>A3. X, this는 함수 자체에서의 정의가 아니라 호출할 때마다 결정된다.</p>
+> </details>
+> <br/>
