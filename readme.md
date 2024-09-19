@@ -37,6 +37,10 @@
       - [3.4.1 객체 연결 장치](#341-객체-연결-장치)
       - [3.4.2 this 다시 보기](#342-this-다시-보기)
       - [3.5 '왜?' 라고 질문하기](#35-왜-라고-질문하기)
+    - [Chapter4. 더 큰 그림](#chapter4-더-큰-그림)
+      - [4.1 첫 번째 기둥: 스코프와 클로저](#41-첫-번째-기둥-스코프와-클로저)
+      - [4.1.1 스코프](#411-스코프)
+      - [4.1.2 클로저](#412-클로저)
 
 ## Part 1
 
@@ -1204,3 +1208,162 @@ https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/St
 >  <p>A3. X, this는 함수 자체에서의 정의가 아니라 호출할 때마다 결정된다.</p>
 > </details>
 > <br/>
+
+### Chapter4. 더 큰 그림
+
+- **중요** 부록 B '연습만이 살길입니다!'는 꼭 풀어보자!
+
+#### 4.1 첫 번째 기둥: 스코프와 클로저
+
+#### 4.1.1 스코프
+
+- 함수나 블록 단위로 변수의 스코프(유효범위)를 한정 짓는 것은 모든 프로그래밍 언어의 근본적 특징
+
+  **\* 스코프와 변수의 비유**
+  ![스코프와 변수의 비유 이미지](./scopeandvariable.jpg) -이미지와 같이 스코프는 양동이에,  
+  변수는 양동이에 넣을 구슬에 비유할 수 있다.
+
+  **\* 언어 고유의 스코프 모델이란?**
+  ![otherHomework 객체를 콘솔로그로 찍은 캡처 이미지](./scopeRule.jpg)
+
+  -이때 언어 고유의 스코프 모델은 구슬과 같은 색을 가진 양동이를 찾도록 도와주는 규칙
+
+- 스코프 안에는 다른 스코프가 올 수 있음
+- 스코프가 중첩되면 표현식 또는 문(statement)은 해당 레벨의 스코프 혹은 더 높거나 바깥 레벨에 있는 변수에만 접근 가능하며 낮거나 안쪽 레벨 스코프에 있는 숨겨진 변수에는 접근할 수 없음
+
+```javascript
+// 중첩 스코프가 접근하는 변수 레벨 예제
+
+let outerVariable = '저는 전역변수에요!';
+
+function outerFunction() {
+  let outerFunctionVariable = '저는 바깥함수에 있는 변수에요!';
+
+  function innerFunction() {
+    let innerFunctionVariable = '저는 내부 함수에 있는 변수에요!';
+    console.log('내부 함수에서 전역변수로 접근해보겠습니다! ', outerVariable);
+    console.log(
+      '내부 함수에서 바깥함수에 있는 변수에 접근해보겠습니다! ',
+      outerFunctionVariable
+    );
+    console.log(
+      '내부 함수에서 내부함수의 변수에 접근해보겠습니다! ',
+      innerFunctionVariable
+    );
+  }
+
+  try {
+    console.log(
+      '외부함수에서 내부함수를 실행시켜보면 결과는 ->',
+      innerFunction()
+    );
+  } catch (err) {
+    console.log('실패!');
+  }
+}
+
+outerFunction();
+```
+
+1. outerVariable은 전역 스코프에 선언, 모든 함수 내에서 접근할 수 있음
+2. 바깥함수(outerFunction) 내에 outerFunctionVariable을 선언, 이 변수는 outerFunction 내부와 그 하위 함수에서 접근 가능
+3. innerFunction 내에 innerFunctionVariable을 선언, 이 변수는 innerFunction 내부에서만 접근 가능
+4. 바깥함수(outerFunction)에서 innerFunction을 실행하여 innerFunctionVariable에 접근하려했지만 실패! 스코프 체인에서 내부 스코프의 변수에 외부 스코프에서 접근할 수 없음을 보여줌
+
+- 이를 통해서 바깥 레벨의 스코프에서 정의된 변수에 접근할 수 있지만, 내부 스코프에 정의된 변수는 외부에서 접근할 수 없음을 알 수 있음
+
+- 대부분의 프로그래밍 언어는 이런 작동 방식을 가지고 있으며, 이를 렉시컬 스코프(어휘 스코프)라고 한다.
+- 프로그램을 파싱(또는 컴파일)할 때 결정, 즉 개발자가 코드를 작성할 때 함수나 스코프를 프로그램 내 어디에 배치하느냐에 따라 스코프가 결정됨
+
+\* JS의 렉시컬 스코프 모델은 여타 언어들과 다른 두 가지 특성을 갖는다.
+
+1. 호이스팅(hoisting)
+2. var를 사용해 선언한 변수는 해당 변수를 선언한 블록 위치와 상관없이 함수 기준으로 스코프가 만들어지는 특성
+
+- 호이스팅이란?
+
+  - hoist는 들어올리다, 끌어올리다 라는 뜻을 가진 영단어
+  - 특정 스코프 내에 선언한 변수가 선언된 위치와 상관없이 해당 스코프 시작 부분에서 선언한 것처럼(끌어올려진 것처럼) 처리 되는 것.
+
+  \* 호이스팅을 확인하기 전에 먼저 다른 언어에서 호출을 먼저하고 변수를 뒤에 선언했을 때를 살펴보자
+
+  ```java
+  // 자바에서 변수선언을 나중에 했을 떄 예제
+  import java.util.*;
+  import java.lang.*;
+  import java.io.*;
+
+  // The main method must be in a class named "Main".
+  class Main {
+    public static void main(String[] args) {
+        System.out.println(name);
+        String name = "폴";
+    }
+  }
+  ```
+
+  자바 웹 컴파일러 - https://www.mycompiler.io/ko/new/java
+
+  ```javascript
+  // JS에서 var 호이스팅 예제
+  console.log(hoistingName); // undefined
+  var hoistingName = '폴';
+
+  console.log(hoistingName); // 폴
+  ```
+
+  - 위 예제는 js에서 변수선언을 호출보다 뒤에 했을 때와 java에서 변수선언을 호출보다 뒤에 했을 때 인데 java에서는 에러가 나지만, js는 에러가 발생하지 않고 undefined가 발생한다. js에서 undefined는 에러가 아니고 원시타입의 값임을 우리는 앞서 배웠음!
+
+  - js에서 undefined가 발생한 이유는 호이스팅 때문임, 변수 hoistingName이 호출보다 나중에 선언됐지만 호이스팅 떄문에 var로 선언한 변수가 먼저 최상단에서 초기화가 이뤄졌기 떄문에 첫 호출에서는 undefined가 출력되고 이후 변수 선에서 값이 할당되어 두 번째 호출 때는 '폴'이 출력됐음을 확인할 수 있음
+
+  ```javascript
+  // JS에서 let 호이스팅 예제
+  console.log(hoistingName); // Uncaught ReferenceError: Cannot access 'hoistingName' before initialization
+  let hoistingName = '폴';
+
+  console.log(hoistingName); // 폴
+  ```
+
+  - 이번엔 var 대신 let으로 변수를 선언했는데 이번엔 undefined 대신 "Uncaught ReferenceError: Cannot access 'hoistingName' before initialization" 이라는 에러가 발생함, 이는 변수가 초기화 전에는 접근할 수 없다는 메시지이며 let과 const로 선언한 변수는 TDZ(Temporal Dead Zone, 일시적 사각지대)의 특징 떄문에 호이스팅은 일어났지만 초기화가 이뤄지지 않았기 때문. 따라서 var은 호이스팅됐을때 자동으로 변수의 초기화 선언이 이뤄지고 let과 const는 초기화가 이뤄지지 않았다는것을 알수 있음.
+
+  ```javascript
+  //let 또는 const의 초기화 선언 방법에 예제
+  let hoistingName; //이 부분이 초기화 선언임
+  console.log(hoistingName); // undefined
+  hoistingName = '폴!';
+  ```
+
+- var 변수의 함수 스코프 예제
+
+  ```javascript
+  function varScope() {
+    if (true) {
+      var ifBlockVariable = 'if 블록안에 선언한 변수에용!';
+    }
+    console.log(ifBlockVariable); // "if 블록안에 선언한 변수에용!"
+  }
+
+  varScope();
+  ```
+
+  - 위 예제처럼 if블록 밖에서 ifBlockVariable 를 호출해도 동작한다. var는 함수스코프이기 떄문에 varScope 함수 내에서는 블럭 밖에서도 접근이 가능하다는것을 알 수 있다.
+
+  ```javascript
+  function varScope() {
+    if (true) {
+      let ifBlockVariable = 'if 블록안에 선언한 변수에용!';
+    }
+    console.log(ifBlockVariable); // Uncaught ReferenceError: ifBlockVariable is not defined
+  }
+
+  varScope();
+  ```
+
+  - 위는 var과는 다르게 let으로 변수를 지정한 경우 에러가 발생하는 것을 확인할 수 있다.
+
+- 간혹 js가 렉시컬스코프 모델을 사용하지 않는다 라고 하는 사람들이 있는데 위에서 알아본 2가지 특징 때문인데 그 특징때문에 렉시컬스코프 모델을 사용하지 않는다고 할 수는 없음, 그냥 js의 렉시컬 스코프의 특징임
+
+#### 4.1.2 클로저
+
+- JS와 같이 함수를 일급값(first-class-value)으로 취급하는 언어에서 렉시컬 스코프 모델을 사용하면 자연스레 나타나는 결과
+-
