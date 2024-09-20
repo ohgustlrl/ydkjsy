@@ -1366,4 +1366,22 @@ outerFunction();
 #### 4.1.2 클로저
 
 - JS와 같이 함수를 일급값(first-class-value)으로 취급하는 언어에서 렉시컬 스코프 모델을 사용하면 자연스레 나타나는 결과
--
+
+\* 리액트에서의 클로저 사용 예제 - https://ko.react.dev/reference/react/useState
+
+```javascript
+import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return <button onClick={handleClick}>You pressed me {count} times</button>;
+}
+```
+
+1. handleClick() 함수는 Counter() 함수의 내부함수, 반대로 Counter() 함수는 handleClick() 함수의 외부 함수가 된다.
+2. 버튼을 클릭하면 handlClick() 함수가 호출되고 외부함수인 Counter() 함수의 변수인
