@@ -41,6 +41,9 @@
       - [4.1 첫 번째 기둥: 스코프와 클로저](#41-첫-번째-기둥-스코프와-클로저)
       - [4.1.1 스코프](#411-스코프)
       - [4.1.2 클로저](#412-클로저)
+      - [4.2 두 번째 기둥: 프로토타입](#42-두-번째-기둥-프로토타입)
+      - [4.3 세 번째 기둥: 타입과 타입 강제 변환](#43-세-번째-기둥-타입과-타입-강제-변환)
+      - [4.4 JS의 본질 따르기](#44-js의-본질-따르기)
 
 ## Part 1
 
@@ -1324,7 +1327,7 @@ outerFunction();
   console.log(hoistingName); // 폴
   ```
 
-  - 이번엔 var 대신 let으로 변수를 선언했는데 이번엔 undefined 대신 "Uncaught ReferenceError: Cannot access 'hoistingName' before initialization" 이라는 에러가 발생함, 이는 변수가 초기화 전에는 접근할 수 없다는 메시지이며 let과 const로 선언한 변수는 TDZ(Temporal Dead Zone, 일시적 사각지대)의 특징 떄문에 호이스팅은 일어났지만 초기화가 이뤄지지 않았기 때문. 따라서 var은 호이스팅됐을때 자동으로 변수의 초기화 선언이 이뤄지고 let과 const는 초기화가 이뤄지지 않았다는것을 알수 있음.
+  - 이번엔 var 대신 let으로 변수를 선언했는데 이번엔 undefined 대신 "Uncaught ReferenceError: Cannot access 'hoistingName' before initialization" 이라는 에러가 발생함, 이는 변수가 초기화 전에는 접근할 수 없다는 메시지이며 let과 const로 선언한 변수는 TDZ(Temporal Dead Zone, 일시적 사각지대)의 특징 떄문에 호이스팅은 일어났지만 변수에 접근은 불가함. 따라서 var은 호이스팅됐을때 자동으로 변수의 초기화 선언이 이뤄지고 let과 const는 초기화가 이뤄지지 않았다는것을 알수 있음.
 
   ```javascript
   //let 또는 const의 초기화 선언 방법에 예제
@@ -1359,13 +1362,15 @@ outerFunction();
   varScope();
   ```
 
-  - 위는 var과는 다르게 let으로 변수를 지정한 경우 에러가 발생하는 것을 확인할 수 있다.
+  - 위는 var과는 다르게 let으로 변수를 지정한 경우 에러가 발생하고 이는 블록스코프의 특징임을 확인할 수 있다.
 
-- 간혹 js가 렉시컬스코프 모델을 사용하지 않는다 라고 하는 사람들이 있는데 위에서 알아본 2가지 특징 때문인데 그 특징때문에 렉시컬스코프 모델을 사용하지 않는다고 할 수는 없음, 그냥 js의 렉시컬 스코프의 특징임
+- 간혹 js가 렉시컬스코프 모델을 사용하지 않는다 라고 하는 사람들이 있는데 그 이유가 위에서 알아본 2가지 특징 때문이라고 하는 경우가 있다. 하지만 그 특징때문에 렉시컬스코프 모델을 사용하지 않는다고 할 수는 없음, 그냥 js의 렉시컬 스코프의 특징임
 
 #### 4.1.2 클로저
 
 - JS와 같이 함수를 일급값(first-class-value)으로 취급하는 언어에서 렉시컬 스코프 모델을 사용하면 자연스레 나타나는 결과
+
+- 함수는 함수가 정의된 스코프를 기준으로 변수를 참조한다.
 
 \* 리액트에서의 클로저 사용 예제 - https://ko.react.dev/reference/react/useState
 
@@ -1384,4 +1389,145 @@ export default function Counter() {
 ```
 
 1. handleClick() 함수는 Counter() 함수의 내부함수, 반대로 Counter() 함수는 handleClick() 함수의 외부 함수가 된다.
-2. 버튼을 클릭하면 handlClick() 함수가 호출되고 외부함수인 Counter() 함수의 변수인
+2. 버튼을 클릭하면 handlClick() 함수가 호출되고 외부함수인 Counter() 함수의 변수인 count 값에 접근한다.
+
+\* 모듈에서의 클로저 예제
+
+```javascript
+//모듈파일(counter.js)
+let count = 0; // 모듈 스코프에서 선언된 변수
+
+export function increment() {
+  count++; // 클로저로 모듈 스코프의 count를 참조
+  return count;
+}
+
+export function getCount() {
+  return count; // 클로저로 모듈 스코프의 count를 참조
+}
+```
+
+```javascript
+//메인파일(index.js)
+import { increment, getCount } from './counter.js';
+
+console.log(increment()); // 1
+console.log(increment()); // 2
+console.log(getCount()); // 2
+```
+
+\* 클로저의 경우는 뒤에서 더 많은 예제로 다룬다고 했으니 일단 이런게 클로저다 라고만 생각해두고 뒤에서 더 자세히 알아보는걸로...;;
+
+#### 4.2 두 번째 기둥: 프로토타입
+
+- js는 클래스를 통해 사전에 구조를 정의하지 않아도 직접적이고 명시적으로 객체를 만들 수 있는 몇 안되는 언어 중 하나.
+
+  \-> 예를 들어 JAVA나 C++ 같은 경우 먼저 class라는 구조를 정의하고 그 클래스를 기반으로 객체를 생성해야됨
+
+  ex)
+
+  ```java
+  class Car {
+    String color;
+    int wheels;
+
+    public Car(String color, int wheels) {
+      this.color = color;
+      this.wheels = wheels;
+    }
+  }
+
+  Car myCar = new Car("red", 4);
+  ```
+
+  하지만 JS는?
+
+  ex)
+
+  ```javascript
+  let car = {
+    color: 'red',
+    wheels: 4,
+  };
+  ```
+
+  객체 리터럴을 사용해 뚝딱!
+
+- 위와 같이 객체 리터럴을 사용해 객체를 만들 수 있는 JS의 장점으로 프로토타입을 사용해 **프로토타입 상속** 이라고 부르는 클래스 디자인 패턴을 구현해왔음
+
+```javascript
+//프로토타입 상속의 예제 (작동위임패턴)
+var Classroom = {
+  welcome() {
+    console.log('하이! 스터디 그룹원님들!');
+  },
+};
+
+var studyClass = Object.create(Classroom);
+
+studyClass.welcome();
+console.log(studyClass); // 프로토타입에 welcome()함수가 들어가 있는것을 확인할 수 있음
+```
+
+```javascript
+//프로토타입을 이용한 클래스 상속 패턴 디자인
+function Classroom() {}
+
+Classroom.prototype.welcome = function hello() {
+  console.log('하이?');
+};
+
+var mathClass = new Classroom();
+
+mathClass.welcome();
+
+console.log(mathClass);
+```
+
+위 두 예제 중 처음은 기본적인 프로토타입의 상속을 보여주는 예제이고 두 번째 예제가 JS의 프로토타입을 이용해서 객체지향 개발자들이 익숙한 형태인 클래스 기반의 상속을 모방한 코드
+
+근데 위의 두 번째 예제처럼 패턴을 모방하여 쓸 바엔 ES6의 클래스 문법을 사용해서 클래스 상속을 사용하는게 훨씬 나음
+
+```javascript
+//ES6의 Class 문법을 사용한 상속 예제
+class Classroom {
+  constructor() {}
+
+  welcome() {
+    console.log('하이?');
+  }
+}
+
+var mathClass = new Classroom();
+
+mathClass.welcome();
+```
+
+이유는 기존의 프로토타입을 이용해서 디자인 패턴만 모방한 방식은 조금만 복잡해지면 코드가 지저분해짐...
+
+하지만 ES6는 Class문법을 도입함으로써 좀더 깔끔하게 코딩할 수 있음
+
+- 위 예제에서 잠시 봤지만 클래스 없이 프로토타입 체인을 통해 객체가 협력하도록 하는 접근법을 작동위임 패턴 이라고 함
+
+\* 저자의 사견이라 클래스 상속 보단 프로토타입의 작동 위임 패턴이 코드 동작과 데이터를 구조화하는데 있어 더 강력하다 라고 하는데 직접적으로 사용 경험이 미천한 저로써는 아직 그게 옳다 라는 판단은 섣부르게 할 수 없어 일단 그렇다라고 생각하고 넘어감
+
+#### 4.3 세 번째 기둥: 타입과 타입 강제 변환
+
+- JS의 본질에서 가장 간과되는 영역
+
+- JS 개발자가 타입에 관해 더 많이 학습하고 JS에서 타입 변환이 어떻게 이뤄지는지 반드시 배워야 함
+
+- 타입 관련 기초 지식이 갖춰진 후에 타입 기반 도구를 사용하면 개발 생산성이 올라갈 수 있다.
+
+#### 4.4 JS의 본질 따르기
+
+- 면접볼 때 이 책에서 나오는 주제나 설명을 인용해 답변하면 틀렸다고 지적받는 경우가 많다고 들었다고 함
+
+- 해당 책에는 JS의 명세서를 기반으로 모든 내용을 다루고 있다고 함
+
+- 중요한 건 왜 그렇게 생각하는지 답변할 준비가 되어 있어야 하고 그러려면 공부를 많이 하라고 함
+
+- 중요한건 현재 작업 중인 플젝이 있다면 개발 방식과 동료들이 일하는 방식을 따르는 게 중요. 기존 플젝을 다 뒤엎겠다고 생각하지 마라 이 방법은 무조건 실패한다. 개선할 점이 있다면 장기간에 걸쳐 조금씩 바꿔나가는걸 추천.
+  동료들과의 토론하고 개선 전과 후 코드 차이에 대해서도 토론하면 좋은 개발자가 될 수 있다고 생각한다고 함
+
+\* 4.5 은 학습 순서에 관한 내용이라 정리에서 제외 합니다.
