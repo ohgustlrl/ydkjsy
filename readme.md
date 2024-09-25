@@ -1223,10 +1223,15 @@ https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/St
 - 함수나 블록 단위로 변수의 스코프(유효범위)를 한정 짓는 것은 모든 프로그래밍 언어의 근본적 특징
 
   **\* 스코프와 변수의 비유**
-  ![스코프와 변수의 비유 이미지](./scopeandvariable.jpg) -이미지와 같이 스코프는 양동이에,  
+
+  ![스코프와 변수의 비유 이미지](./scopeandvariable.jpg)  
+  
+  -이미지와 같이 스코프는 양동이에,  
   변수는 양동이에 넣을 구슬에 비유할 수 있다.
 
+  
   **\* 언어 고유의 스코프 모델이란?**
+
   ![otherHomework 객체를 콘솔로그로 찍은 캡처 이미지](./scopeRule.jpg)
 
   -이때 언어 고유의 스코프 모델은 구슬과 같은 색을 가진 양동이를 찾도록 도와주는 규칙
