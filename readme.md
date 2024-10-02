@@ -1829,9 +1829,9 @@ console.log(nextStudent); //슈슉
 > </details>
 > <br/>
 > <details>
->  <summary>Q6. 런렉시컬 스코프(어휘 스코프)는 무엇에 의해 결정되나요?
+>  <summary>Q6. 렉시컬 스코프(어휘 스코프)는 무엇에 의해 결정되나요?
 > </summary>
 > <br/>
->  <p>A6. 수나 블록, 변수 선언의 코드 배치에 따라 결정</p>
+>  <p>A6. 함수나 블록, 변수 선언의 코드 배치에 따라 결정</p>
 > </details>
 > <br/>
