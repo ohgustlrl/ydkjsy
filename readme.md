@@ -2736,3 +2736,168 @@ console.log(self.studentID);
 
 - 메인 js 프로그램과 마찬가지로 var와 function 선언은 self처럼 전역 객체에 미러링 프로퍼티를 생성하지만 let을 비롯한 그 이외의 선언은 미러링 프로퍼티를 생성하지 않음
 - 웹 워커 예시에서 전역 스코프는 일반 JS 프로그램의 전역 스코프와 작동 방식이 거의 같음. DOM과 엮일 일이 없기 떄문에 훨씬 더 순수하게 동작한다고 표현할 수도 있음
+
+#### 4.2.3 개발자 도구와 콘솔, REPL
+- 개발자도구는 JS 코드를 처리하긴 하지만 DX라 부르는 개발자 경험을 향상시키기 위해 UX가 설계 돼 있음
+- DX 중심적이며 덜 엄격적으로 코드를 처리하기 때문에 일반적으론 오류가 날 수 있는 코드인데 개발자 도구에서는 오류가 발생하지 않을 수 있음
+- 이러한 차이 중 스코프와 연관된 사례는 다음과 같음  
+    1. 전역스코프의 작동 방식
+    2. 호이스팅(5장-chapter5 변수의 비밀 생명주기 쪽에서 다룰 예정)
+    3. 가장 바깥 스코프에서(let과 const로) 블록 스코프 선언을 할 때(6.3절-chapter6.3 블록으로 스코프 지정에서 다룰 예정)
+
+- 콘솔이나 REPL(레플 - Read-Eval-Print Loop, 코드를 입력하면 실행하고, 결과를 출력하며 이 과정을 반복하는 환경)을 사용해 가장 바깥 스코프에 문을 입력했을 때, 해당 문은 전역스코프에서 처리 되지 않음
+- 콘솔이나 REPL 환경은 전역 스코프 작동 방식을 모방한 에뮬레이터일 뿐, 엔진이 작동하는 방식을 완벽하게 모방하지 못하기 때문에 JS 명세서와는 다르게 프로그램이 동작할 수 있음
+
+#### 4.2.4 ES모듈
+- ES 모듈의 두드러지는 특징은 파일 내 최상위 레벨 스코프 작동 방식임
+
+```javascript
+// ES6 모듈의 예제
+var studentName = "폴";
+
+function hello() {
+  console.log(`${studentName}님 하이요?`);
+  
+}
+
+hello();
+
+export default hello;
+```
+- import 를 사용해 예시 코드를 ES 모듈 형태로 불러와 사용하는 경우에도 그냥 단독 파일을 실행하는 것과 동일하게 실행됨
+- 하지만 전체 애플리케이션의 관점에서 관찰되는 현상은 위와 다름  
+  1. studentName과 hello 는 모듈 내에서 최상위 레벨인 가장 바깥 스코프이나 전역변수가 되지 않음  
+  2. 대신 모듈 범위 스코프의 변수가 됨 (모듈 범위 스코프는 모듈 전역 스코프라고도 함)
+  3. 모듈에는 최상위 레벨의 선언을 프로퍼티로 추가할 수 있는 모듈 범위 스코프 객체를 지원하지 않음, 이것이 모듈에 전역 변수가 없다거나 전역 변수에 접근할 수 없다는 뜻은 아님
+  4. 모듈 최상위 레벨 스코프에서는 모듈 내 모든 콘텐츠가 함수에 래핑된 것처럼 묶여 처리되고 이는 전역 스코프의 하위 스코프가 됨
+- ES 모듈 패턴에서는 현재 모듈을 작동시키는 데 필요한 모든 모듈을 import 하는 전역 스코프에 대한 의존도를 최소화 하라고 권장함
+- 다만 알게모르게 웹 API를 사용해야 해서 전역 스코프를 사용하는게 불가피 하므로 이에 대해 알고 있는것이 중요
+
+#### 4.2.5 Node.js
+- node.js 는 엔트리 파일을 포함 모든 js파일을 모듈(es모듈 혹은 commonJS 모듈)로 처리하는 특징이 있음
+- 이 특징은 브라우저에서 모듈이 아닌 파일을 로드할 때와 다르게 각 JS파일이 자체 스코프를 갖도록 함
+- node.js는 태생부터 commonJS라는 모듈 형식을 지원했었음
+
+```javascript
+// nodeJS의 commonJS 모듈의 예제
+var studentName = "폴";
+
+function hello() {
+  console.log(`${studentName}님 하이요?`);
+  
+}
+
+hello();
+
+module.exports.hello =  hello;
+```
+- 위에서 언급했지만 nodejs는 js파일을 모듈로 처리하는 특징이 있음, 이는 var 및 function 선언이 전역 변수로 취급되는 걸 방지하고 선언들을 함수 스코프에 포함시키기 위함임
+- 위의 commonJS 방식의 예시 코드를 nodeJS에서 실행할 경우 아래와 같은 코드로 만들어짐(가상의 코드임)
+```javascript
+// node.js로 위 예시 파일을 실행했을 때의 가상의 코드
+function Module(module, require, __dirname, ...) {
+  var studentName = "폴";
+  
+  function hello() {
+    console.log(`${studentName}님 하이요?`);
+    
+  }
+  
+  hello();
+  
+  module.exports.hello =  hello;
+}
+```
+- nodeJS는 추가 함수 Module() -- 해당 함수는 nodejs 내부에서 모듈을 로드하고 실행하는 매커니즘을 설명하기 위한 개념적 표현임 -- 을 호출해 모듈을 실행함
+- 가상의 코드로 var과 function이 왜 전역이 아니고 모듈 스코프 인지 명쾌하게 알  수 있음
+- 이러한 API의 식별자들은 전역에 없음, 전역 객체의 속성도 아니며, 예시의 Module() 함수에 있는 매개변수처럼 모든 모듈의 스코프에 자동으로 주입됨
+
+- **NodeJS에서 찐 전역 변수 정의 방법?** nodejs의 내장 전역 프로퍼티인 global에 프로퍼티를 추가하는 방법이 유일함
+
+```javascript
+// nodejs에서 global 프로퍼티를 이용하여 전역 변수를 정의하는 예시
+
+global.studentName = "폴";
+
+function hello() {
+  console.log(`${studentName}님 하이요?`);
+}
+
+hello();
+
+module.exports.hello = hello;
+```
+- 중요한것은 **식별자 global은 JS가 아닌 nodejs 정의되었다는 사실**
+
+#### 4.3 globalThis
+
+- 지금까지 살펴본 여러 JS 호스팅 환경에서의 차이 및 특징은 아래와 같이 정리할 수 있음
+  1. 최상위 레벨 스코프에 var, function 또는 let, const, class를 사용해 전역 변수를 선언할 수 있는데 두 방식에는 차이가 있음
+  2. var 또는 function을 사용해 선언하는 경우 해당 선언은 전역 객체의 프로퍼티로 추가됨
+  3. 전역 스코프 객체(전역 변수를 추가하거나 검색할 때 프로퍼티로 사용)는 window, self, global로 참조함
+
+- 전역 스코프 접근과 작동 방식은 훨씬 복잡함, 다만 전역 스코프 객체에 접근할 수 있게 하는 참조를 확정 짓는 것은 그렇지 않음
+- 다음은 전역 스코프 객체 참조를 얻을 수 있는 꼼수 임
+
+```javascript
+const theGlobalScopeObject = (new Function("return this"))();
+```
+<br/>
+
+> eval()함수 와 유사하게 Function() 생성자를 사용하면 문자열에 해당하는 코드로부터 동적으로 함수를 만들수 있는데 (1.5절 런타임에 스코프 변경하기 참조)    
+>이렇게 생성한 함수는 (레거시상의 이유로) 비엄격 모드에서 자동으로 실행됨.    
+>그러나 비엄격 모드에서 함수 내부의 this는 전역 객체를 가리키므로 (new Function("return this"))();는 전역 객체를 반환함.
+
+- window, self, global 외에도 위와 같은 방법으로 전역 객체를 참조하는 꼼수가 있으며, 이 외에도 다른 방법들이 있으며 각각 장단점이 있음
+- 방법은 다양하지만 ES2020에서 전역 스코프 객체 참조가 globalThis로 표준화 됐기 때문에 다른 꼼수는 패쓰!
+- JS 엔진 상태에 따라 다를 수 있지만 globalThis를 사용하면 전역 스코프 객체를 참조할 수 있고, 혹여라도 지원하지 않는 경우 다음과 같은 폴리필을 사용해 호스트 환경에 상관없이 사용할 수 있음
+```javascript
+const theGlobalScopeObject = 
+  (typeof globalThis != 'undefined') ? globalThis : 
+  (typeof global != 'undefined') ? global : 
+  (typeof window != 'undefined') ? window :
+  (typeof self != 'undefined') ? self :
+  (new Function('return this'))();
+```
+> globalThis 라는 이름이 제안되고 명세서에 추가되기까지 상당한 논란이 있었음    
+> 이 객체를 참조하는 이유는 전역 스코프에 액세스 하기 위함인데 마치 this 바인딩에 액세스 하기 위한 것 같이 이름이 지어져서였음    
+> 여러 의견이 분분했고 다양한 이름이 후보에 올랐지만 결국 globalThis가 채택됐다고 함
+
+#### 4.4 정리
+- 모듈 단위로 쪼개는 개발 방식이 많이 자리 잡히며 네임스페이스에 식별자를 저장하는 방식을 많이 사용하지 않는 현재지만 전역 스코프는 모든 js 프로그램에 존재하고 중요한 역할을 함
+- 호스트 환경별로 전역 스코프와 전역 스코프 객체가 어떤 차이를 보이는지 확실히 아는 것이 중요
+
+> Chapter4 문제
+>
+> <details>
+>  <summary>Q1. 다음 중 전역 스코프의 특징으로 옳지 않은 것을 고르시오. <br/><br/>
+> 1. 전역 스코프는 모든 JavaScript 파일에서 공유된다.<br/>
+> 2. var로 선언된 변수는 전역 객체의 속성으로 추가된다.<br/>
+> 3. let과 const로 선언된 변수는 전역 객체의 속성이 되지 않는다.<br/>
+> 4. ES 모듈은 항상 전역 스코프에서 실행된다.<br/>
+> </summary>
+> <br/>
+>  <p>A1. 4번 => ES 모듈은 독립된 모듈 범위 스코프에서 실행 됩니다! <br/> </p>
+> </details>
+> <br/>
+> <details>
+>  <summary>Q2. window.name 프로퍼티는 브라우저가 미리 정의한 전역 객체의 프로퍼티입니다. <br/> 이 프로퍼티에 값을 설정할 때 항상  타입으로 변환됩니다. 어떤 타입으로 변환되나요?<br/>
+> </summary>
+> <br/>
+> <p> A2. 문자열 (string)</p>
+> </details>
+> <br/>
+> <details>
+>  <summary>Q3. ES2020에서 객체 스코프 객체를 참조하기 위해 사용할 수 있는 표준화된 속성의 이름은 무엇일까요 ? <br/>
+> </summary>
+> <br/>
+>  <p>A3. globalThis</p>
+> </details>
+> <br/>
+><details>
+>  <summary>Q4. Node.js 환경에서 전역 변수를 선언하려면 어떤 객체를 사용해야 하나요? <br/>
+> </summary>
+> <br/>
+>  <p>A4. global</p>
+> </details>
+> <br/>
