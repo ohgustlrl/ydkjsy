@@ -76,6 +76,25 @@
       - [3.5 정리](#35-정리)
     - [CHAPTER 4. 전역 스코프](#chapter-4-전역-스코프)
       - [4.1 전역 스코프를 배워야 하는 이유](#41-전역-스코프를-배워야-하는-이유)
+      - [4.2 전역 스코프의 위치](#42-전역-스코프의-위치)
+      - [4.2.1 브라우저의 창, window 객체](#421-브라우저의-창-window-객체)
+      - [4.2.2 웹 워커](#422-웹-워커)
+      - [4.2.3 개발자 도구와 콘솔, REPL](#423-개발자-도구와-콘솔-repl)
+      - [4.2.4 ES모듈](#424-es모듈)
+      - [4.2.5 Node.js](#425-nodejs)
+      - [4.3 globalThis](#43-globalthis)
+      - [4.4 정리](#44-정리)
+    - [CHAPTER 5. 변수의 비밀 생명주기](#chapter-5-변수의-비밀-생명주기)
+    - [CAHPTER 6. 스코프 노출 제한](#cahpter-6-스코프-노출-제한)
+      - [6.1 최소 노출의 원칙(POLE)](#61-최소-노출의-원칙pole)
+      - [6.2 일반(함수) 스코프에 숨기기](#62-일반함수-스코프에-숨기기)
+      - [6.2.1 함수 표현식 즉시 호출하기](#621-함수-표현식-즉시-호출하기)
+      - [6.3 블록으로 스코프 지정](#63-블록으로-스코프-지정)
+      - [6.3.1 var와 let](#631-var와-let)
+      - [6.3.2 let의 위치](#632-let의-위치)
+      - [6.3.3 catch와 스코프](#633-catch와-스코프)
+      - [6.4 블록 내 함수 선언](#64-블록-내-함수-선언)
+      - [6.5 정리](#65-정리)
 
 ## Part 1
 
@@ -2453,75 +2472,35 @@ var ask = () => {};
 > <br/>
 
 ### CHAPTER 4. 전역 스코프
+
 - 이번 챕터는 전역 스코프의 중요성을 알아보는 챕터
 - 전역 스코프에는 훨씬 더 많은 유용한 기능을 제공하면서 여타 스코프와는 다른 미묘한 차이가 있다는 것을 알아봄
 - 또한 여러 JS 호스트 환경에서 전역스코프는 어디에 있고 어떻게 전역 스코프에 접근하지는지 알아봄
-  
+
 #### 4.1 전역 스코프를 배워야 하는 이유
+
 - js파일 여러 개가 모여 앱이 만들어지는데 JS 엔진은 분리된 여러 개의 파일을  
   실행 시점에 다양한 방법으로 연결함
 - 그 중 브라우저에서 실행되는 앱은 주로 세 가지 방법을 사용해 파일을 하나로 모으고 실행함
+
 1. (별도의 모듈 번들러를 사용하지 않고) ES 모듈을 바로 사용하는 경우
-  - 파일을 각자 하나씩 로딩함
-  - 로딩 후 import 문에 있는 다른 모듈을 참조함
-  - 각 모듈은 서로의 스코프를 공유하지 않고 배타적으로 협력함
+
+- 파일을 각자 하나씩 로딩함
+- 로딩 후 import 문에 있는 다른 모듈을 참조함
+- 각 모듈은 서로의 스코프를 공유하지 않고 배타적으로 협력함
+
 2. 구축 과정에 번들러가 관여하는 경우
-  - 파일 전체가 합쳐져서 브라우저와 JS 엔진에 전달됨
-  - 따라서 브라우저, JS 엔진은 하나의 커다란 파일만 처리
-  - 단 하나의 파일을 처리할 때 번들러는 다양한 빌드 환경을 제공
-  - 그 중 일부는 파일 내용 전체를 래퍼 함수나 유니버셜 모듈 등을 사용해  
-    하나의 스코프 안에 묶도록 해줌
-  - 아래 예시처럼 다른 코드 조각(모듈)에서 자신을 접근할 수 있도록 하는  
-    지역 변수를 공유 스코프안에 등록함
 
-  ```javascript
-  (function wrappingOuterScope() {
-    var moduleOne = (function one() {
-      // 파일1번의 내용
-    })();
-    var moduleTwo = (function two() {
-      // 파일2번의 내용
-      function callModuleOne() {
-        moduleOne.someMethod();
-      }
-      // ...
-    })();
-  })();    
-  ```
-  - 예시처럼 moduleOne과 moduleTwo는 각 코드 조각끼리 협력(참조)할 수 있도록 선언 됨
-  - 래퍼함수(wrappingOuterScope())의 스코프는 환경 전체를 아우르는 전역 스코프가 아닌 함수 스코프이나 앱 전체를 아우르는 스코프처럼 동작함
-  - 진짜 전역 스코프는 아니지만 래퍼함수의 스코프에는 모든 최상위 레벨의 식별자가 저장됨
+- 파일 전체가 합쳐져서 브라우저와 JS 엔진에 전달됨
+- 따라서 브라우저, JS 엔진은 하나의 커다란 파일만 처리
+- 단 하나의 파일을 처리할 때 번들러는 다양한 빌드 환경을 제공
+- 그 중 일부는 파일 내용 전체를 래퍼 함수나 유니버셜 모듈 등을 사용해  
+  하나의 스코프 안에 묶도록 해줌
+- 아래 예시처럼 다른 코드 조각(모듈)에서 자신을 접근할 수 있도록 하는  
+  지역 변수를 공유 스코프안에 등록함
 
-3. 전역 스코프를 활용하는 방법
-  - 번들러를 사용하든, 파일을 script 태그로 불러오든 모든 모듈들을 아우르는 하나의 스코프가 없는 경우라면 협업할 수 있는 유일한 방법은 전역 스코프 밖에 없음
-  - 다음 예시처럼 파일이 2개 있고, main.js에서 프로그램(모듈 -각각의 파일들-)을 로딩해햐하는 상황일 때
-
-  ```javascript
-  // module1.js
-  var moduleOne = (function one() {
-    // 파일1번의 내용
-  })();
-  ```
-  ```javascript
-  // module2.js
-  var moduleTwo = (function one() {
-    // 파일2번의 내용
-    function callModuleOne() {
-      moduleOne.someMethod();
-      // ...
-    }
-  })();
-  ```
-  ```javascript
-  // main.js
-  import moduleOne from ...
-  import moduleTwo from ...
-
-  //....
-  ```
-  - 해당 방법을 사용할 때 번들링 결과 코드는 대게 다음과 같음
-
-  ```javascript
+```javascript
+(function wrappingOuterScope() {
   var moduleOne = (function one() {
     // 파일1번의 내용
   })();
@@ -2529,25 +2508,82 @@ var ask = () => {};
     // 파일2번의 내용
     function callModuleOne() {
       moduleOne.someMethod();
-      // ...
     }
+    // ...
   })();
-  ```
-  - 2번의 번들러와는 다르게 moduleOne과 moduleTwo는 전역 스코프로 나왔고 이를 감싸는 래퍼 함수는 없음
-  - 이런 경우 개별 파일이 공유하는 유일한 리소스는 전역 스코프이므로 각 모듈(파일)의 최상위 스코프에 선언된 변수들은 전역 스코프의 전역 변수가 됨
+})();
+```
 
-**※ 전역 스코프는 다음의 경우에도 사용합니다.**  
-  1. js 내장 기능을 사용할 때  
-    - 원싯값 : undefined, null, Infinity, NaN  
-    - 네이티브(기본제공) 객체: Date(), Object(), String() 등  
-    - 전역 함수 : eval(), parseInt() 등  
-    - 네임스페이스 : Math, Atomics. JSON  
-    - js와 협력관계인 기술 : Intl, WebAssembly
-  2. 특정 호스팅 환경에서 제공하는 내장 기능을 사용할 때  
-    - console과 연관된 메서드 (console.log(), console.error 등)
-    - DOM (window, document 등)
-    - 타이머(setTimeout() 등)
-    - 웹 API : navigator, history, geolocation, WebRTC 등
+- 예시처럼 moduleOne과 moduleTwo는 각 코드 조각끼리 협력(참조)할 수 있도록 선언 됨
+- 래퍼함수(wrappingOuterScope())의 스코프는 환경 전체를 아우르는 전역 스코프가 아닌 함수 스코프이나 앱 전체를 아우르는 스코프처럼 동작함
+- 진짜 전역 스코프는 아니지만 래퍼함수의 스코프에는 모든 최상위 레벨의 식별자가 저장됨
+
+3. 전역 스코프를 활용하는 방법
+
+- 번들러를 사용하든, 파일을 script 태그로 불러오든 모든 모듈들을 아우르는 하나의 스코프가 없는 경우라면 협업할 수 있는 유일한 방법은 전역 스코프 밖에 없음
+- 다음 예시처럼 파일이 2개 있고, main.js에서 프로그램(모듈 -각각의 파일들-)을 로딩해햐하는 상황일 때
+
+```javascript
+// module1.js
+var moduleOne = (function one() {
+  // 파일1번의 내용
+})();
+```
+
+```javascript
+// module2.js
+var moduleTwo = (function one() {
+  // 파일2번의 내용
+  function callModuleOne() {
+    moduleOne.someMethod();
+    // ...
+  }
+})();
+```
+
+```javascript
+// main.js
+import moduleOne from ...
+import moduleTwo from ...
+
+//....
+```
+
+- 해당 방법을 사용할 때 번들링 결과 코드는 대게 다음과 같음
+
+```javascript
+var moduleOne = (function one() {
+  // 파일1번의 내용
+})();
+var moduleTwo = (function two() {
+  // 파일2번의 내용
+  function callModuleOne() {
+    moduleOne.someMethod();
+    // ...
+  }
+})();
+```
+
+- 2번의 번들러와는 다르게 moduleOne과 moduleTwo는 전역 스코프로 나왔고 이를 감싸는 래퍼 함수는 없음
+- 이런 경우 개별 파일이 공유하는 유일한 리소스는 전역 스코프이므로 각 모듈(파일)의 최상위 스코프에 선언된 변수들은 전역 스코프의 전역 변수가 됨
+
+**※ 전역 스코프는 다음의 경우에도 사용합니다.**
+
+1. js 내장 기능을 사용할 때
+
+   - 원싯값 : undefined, null, Infinity, NaN
+   - 네이티브(기본제공) 객체: Date(), Object(), String() 등
+   - 전역 함수 : eval(), parseInt() 등
+   - 네임스페이스 : Math, Atomics. JSON
+   - js와 협력관계인 기술 : Intl, WebAssembly
+
+2. 특정 호스팅 환경에서 제공하는 내장 기능을 사용할 때
+
+   - console과 연관된 메서드 (console.log(), console.error 등)
+   - DOM (window, document 등)
+   - 타이머(setTimeout() 등)
+   - 웹 API : navigator, history, geolocation, WebRTC 등
+
 여기에 언급하지는 않지만 전역에는 여러가지 기능이 있음
 
 #### 4.2 전역 스코프의 위치
@@ -2557,71 +2593,76 @@ var ask = () => {};
 #### 4.2.1 브라우저의 창, window 객체
 
 - 전역 스코프가 처리되는 환경 중 가장 순수(pure)한 환경은 브라우저에서 단독으로 js파일을 로드할 때 관찰할 수 있음
-- 파일을 로드할 때 브라우저가 자동으로 추가하는 게 없어서 '순수'가 아님, 브라우저는 코드 침입을 최소화하고 전역 스코프가 작동할 때  최대한 간섭하지 않기 떄문임
+- 파일을 로드할 때 브라우저가 자동으로 추가하는 게 없어서 '순수'가 아님, 브라우저는 코드 침입을 최소화하고 전역 스코프가 작동할 때 최대한 간섭하지 않기 떄문임
 
 **예시**
+
 ```javascript
-var studentName = "폴";
+var studentName = '폴';
 
 function hello() {
-  console.log(`${ studentName }님 안녕하세요!`);
+  console.log(`${studentName}님 안녕하세요!`);
 }
 
 hello(); // 폴님 안녕하세요!
 ```
 
-1. ``` <script> var studentName = "폴"; </script> ```와 같이 사용할 떄
-2. ``` <script src="...">```와 같이 사용할 때 
-3. ```<script>``` 태그에 대응하는 DOM 요소를 동적으로 생성할 때
+1. `<script> var studentName = "폴"; </script>`와 같이 사용할 떄
+2. ` <script src="...">`와 같이 사용할 때
+3. `<script>` 태그에 대응하는 DOM 요소를 동적으로 생성할 때
+
 ```javascript
 //3번 방법의 예시
 
 const script = document.createElement('script');
 
 // script 요소의 src 속성을 설정하여 로드할 스크립트 파일을 지정
-script.src = "...";
+script.src = '...';
 
 // script 요소를 DOM에 추가하여 실행
 document.head.appendChild(script);
-
 ```
+
 - 위의 세 경우 모두 식별자 studentName과 hello()가 전역스코프의 선언 됨
-> 코드펜 예제 확인해보기- https://codepen.io/ohgustlrl/pen/XWvoEyO
+
+  > 코드펜 예제 확인해보기- https://codepen.io/ohgustlrl/pen/XWvoEyO
 
 - js 명세서를 읽어보면 예시에서 외부 스코프가 글로벌 스코피이고 studentName은 전역 변수가 된다는걸 알수 있음  
-**참조**
->JavaScript 명세서(ECMAScript 사양)에서 전역 스코프와 전역 변수에 대한 개념은 ECMAScript 사양 
->10.2절 "Execution Contexts"와 10.2.2절 "Global Environment Records"에 설명되어 있습니다. 
->여기서 ECMAScript의 실행 컨텍스트와 환경 기록(Environment Record)에서 전역 스코프의 특성과 전역 변수의 생성 방식을 다루고 있습니다.
->
->명세의 핵심 내용은 다음과 같습니다:
->
->Global Execution Context:
->
->전역 컨텍스트는 스크립트가 실행될 때 처음 생성되며, 이 때 만들어지는 실행 컨텍스트는 "전역 컨텍스트"로 불립니다.
->전역 컨텍스트는 **전역 환경(Global Environment Record)**를 포함하고, 이 환경에서 정의된 변수는 전역 객체의 프로퍼티로 등록됩니다.
->이때 최상위에서 선언된 변수는 전역 스코프에 속하게 되며, 이를 전역 변수로 정의합니다.
->Global Environment Record:
->
->전역 컨텍스트에는 GlobalEnvironmentRecord가 포함되어 있으며, 이는 전역 변수와 함수 선언을 관리합니다.
->이 GlobalEnvironmentRecord가 바로 "외부 스코프가 글로벌 스코프"로 동작하는 환경입니다. 여기에서 선언된 변수는 전역 객체(window나 globalThis 등)의 속성으로 추가됩니다.
->전역 변수의 등록:
->
->명세서에 따르면, var 키워드로 최상위에서 선언한 변수는 전역 환경의 GlobalEnvironmentRecord에 기록됩니다. 이 변수들은 전역 객체의 속성으로 접근할 수 있어 전역 변수로 간주됩니다.
->let이나 const로 선언된 변수도 전역에서 선언될 수 있지만, 전역 객체의 속성이 되지는 않습니다. 대신 전역 스코프에 존재하는 변수가 됩니다.
->이 내용이 정확히 어디에 나오는지 요약하자면, **ECMAScript 명세의 "Execution Contexts" 및 "Global Environment Records"**에서 전역 스코프와 전역 변수의 개념이 정의됩니다.
+  **참조**
+
+  > JavaScript 명세서(ECMAScript 사양)에서 전역 스코프와 전역 변수에 대한 개념은 ECMAScript 사양
+  > 10.2절 "Execution Contexts"와 10.2.2절 "Global Environment Records"에 설명되어 있습니다.
+  > 여기서 ECMAScript의 실행 컨텍스트와 환경 기록(Environment Record)에서 전역 스코프의 특성과 전역 변수의 생성 방식을 다루고 있습니다.
+  >
+  > 명세의 핵심 내용은 다음과 같습니다:
+  >
+  > Global Execution Context:
+  >
+  > 전역 컨텍스트는 스크립트가 실행될 때 처음 생성되며, 이 때 만들어지는 실행 컨텍스트는 "전역 컨텍스트"로 불립니다.
+  > 전역 컨텍스트는 **전역 환경(Global Environment Record)**를 포함하고, 이 환경에서 정의된 변수는 전역 객체의 프로퍼티로 등록됩니다.
+  > 이때 최상위에서 선언된 변수는 전역 스코프에 속하게 되며, 이를 전역 변수로 정의합니다.
+  > Global Environment Record:
+  >
+  > 전역 컨텍스트에는 GlobalEnvironmentRecord가 포함되어 있으며, 이는 전역 변수와 함수 선언을 관리합니다.
+  > 이 GlobalEnvironmentRecord가 바로 "외부 스코프가 글로벌 스코프"로 동작하는 환경입니다. 여기에서 선언된 변수는 전역 객체(window나 globalThis 등)의 속성으로 추가됩니다.
+  > 전역 변수의 등록:
+  >
+  > 명세서에 따르면, var 키워드로 최상위에서 선언한 변수는 전역 환경의 GlobalEnvironmentRecord에 기록됩니다. 이 변수들은 전역 객체의 속성으로 접근할 수 있어 전역 변수로 간주됩니다.
+  > let이나 const로 선언된 변수도 전역에서 선언될 수 있지만, 전역 객체의 속성이 되지는 않습니다. 대신 전역 스코프에 존재하는 변수가 됩니다.
+  > 이 내용이 정확히 어디에 나오는지 요약하자면, **ECMAScript 명세의 "Execution Contexts" 및 "Global Environment Records"**에서 전역 스코프와 전역 변수의 개념이 정의됩니다.
 
 - 단, 위와 같은 작동 방식이 모든 JS 호스트 환경에서 보장되진 않음
 
-**전역을 가리는 전역**  
+**전역을 가리는 전역**
 
 - 안쪽 스코프에 선언된 변수는 바깥쪽 스코프에 선언된 이름이 같은 변수를 가리고 접근을 막음 = 섀도잉
 - 그런데 전역 변수와 이와 이름이 같은 전역 프로퍼티(속성)는 섀도잉과 다른 방식으로 작동함
 - 전역 스코프에서는 다음과 같이 전역 객체의 프로퍼티가 전역 변수에 의해 가려짐
+
 ```javascript
 window.something = 42;
 
-let something = "폴";
+let something = '폴';
 
 console.log(something);
 //폴
@@ -2629,55 +2670,57 @@ console.log(something);
 console.log(window.something);
 //42
 ```
+
 > 코드펜 예제 확인해보기 - https://codepen.io/ohgustlrl/pen/JjgwvyX
 
 - let으로 변수 something 을 선언하면 전역 변수가 되지만 전역 객체의 프로퍼티가 추가되지는 않음을 알 수 있음
 - 그 영향으로 something 렉시컬 식별자가 something 전역 객체 프로퍼티를 새도잉 함
 - 전역 객체에 있는 프로퍼티와 전역 스코프에 등록된 식별자가 다르게 작동하도록 코드를 작성하는 건 좋지 않음
 - 전역에 무언가를 선언할 때 실수를 막을 수 있는 좋은 방법은 전역에서는 항상 var를 쓰는 것이고 let과 const는 블록 스코프에서만 쓰는 것임
-> 해당 대목에 대해 옮긴이가 저자에게 묻길 근래에 작성된 JS 서적이나 자료에서는 let, const를 주로 쓰고 var를 쓰지 말라고 하는 경우가 많다고 하자 저자는 '각자가 다른 철학을 가지고 JS를 바라본다' 라고 답변했다고 함  
-> 따라서 한번 더 짚고 넘어가고자 함  
-> 근래에 작성된 JS서적이나 자료에서의 var보다 let과 const 선언을 사용하라고 하는 근거  
->
-> 1.스코프(scope) 규칙의 차이
->
->var는 함수 스코프를 따르며, 블록({ }) 내에서 선언해도 해당 블록을 벗어나 접근이 가능합니다.  
->반면 let과 const는 블록 스코프를 따르므로, 선언된 블록 내에서만 유효합니다. 이로 인해 블록 단위로 더 안전하게 변수를 관리할 수 있습니다.  
->
-> 2.호이스팅(hoisting) 방식의 차이  
-> var는 선언과 동시에 초기 값으로 undefined가 할당되기 때문에, 호이스팅 이후 초기화되기 전에도 undefined로 접근할 수 있습니다.  
-> 즉, var로 선언된 변수는 호이스팅 후 초기화되기 전까지 undefined 값을 가집니다.  
->  
->let과 const는 호이스팅되지만, 초기화되기 전에는 접근할 수 없는 TDZ(Temporal Dead Zone)에 위치합니다.  
->따라서 let이나 const로 선언된 변수에 초기화 이전에 접근하려 하면, ReferenceError가 발생합니다.  
->  
-> 3.재할당 가능 여부 (const의 불변성)  
-> const로 선언한 변수는 재할당이 불가능하여, 상수나 변하지 않을 값을 정의할 때 유용합니다.  
-> let은 재할당이 가능하지만, 블록 스코프와 TDZ에 의해 관리되므로, 의도치 않게 값이 변경되거나 덮어씌워지는 상황을 피할 수 있습니다.
->  
-> 4.코드 가독성과 의도 표현  
-> let과 const는 변수 사용 의도를 명확하게 표현하는 데 도움을 줍니다. 특히 const를 사용하면 해당 값이 변경되지 않음을 보장하므로, > 코드 읽는 사람에게도 의도를 분명히 전달할 수 있습니다.
+  > 해당 대목에 대해 옮긴이가 저자에게 묻길 근래에 작성된 JS 서적이나 자료에서는 let, const를 주로 쓰고 var를 쓰지 말라고 하는 경우가 많다고 하자 저자는 '각자가 다른 철학을 가지고 JS를 바라본다' 라고 답변했다고 함  
+  > 따라서 한번 더 짚고 넘어가고자 함  
+  > 근래에 작성된 JS서적이나 자료에서의 var보다 let과 const 선언을 사용하라고 하는 근거
+  >
+  > 1.스코프(scope) 규칙의 차이
+  >
+  > var는 함수 스코프를 따르며, 블록({ }) 내에서 선언해도 해당 블록을 벗어나 접근이 가능합니다.  
+  > 반면 let과 const는 블록 스코프를 따르므로, 선언된 블록 내에서만 유효합니다. 이로 인해 블록 단위로 더 안전하게 변수를 관리할 수 있습니다.
+  >
+  > 2.호이스팅(hoisting) 방식의 차이  
+  > var는 선언과 동시에 초기 값으로 undefined가 할당되기 때문에, 호이스팅 이후 초기화되기 전에도 undefined로 접근할 수 있습니다.  
+  > 즉, var로 선언된 변수는 호이스팅 후 초기화되기 전까지 undefined 값을 가집니다.
+  >
+  > let과 const는 호이스팅되지만, 초기화되기 전에는 접근할 수 없는 TDZ(Temporal Dead Zone)에 위치합니다.  
+  > 따라서 let이나 const로 선언된 변수에 초기화 이전에 접근하려 하면, ReferenceError가 발생합니다.
+  >
+  > 3.재할당 가능 여부 (const의 불변성)  
+  > const로 선언한 변수는 재할당이 불가능하여, 상수나 변하지 않을 값을 정의할 때 유용합니다.  
+  > let은 재할당이 가능하지만, 블록 스코프와 TDZ에 의해 관리되므로, 의도치 않게 값이 변경되거나 덮어씌워지는 상황을 피할 수 있습니다.
+  >
+  > 4.코드 가독성과 의도 표현  
+  > let과 const는 변수 사용 의도를 명확하게 표현하는 데 도움을 줍니다. 특히 const를 사용하면 해당 값이 변경되지 않음을 보장하므로, > 코드 읽는 사람에게도 의도를 분명히 전달할 수 있습니다.
 
 **DOM 전역 변수**
-- 다양한 JS 환경 중 브라우저가 전역 스코프 처리 관점에서 가장 순수한 환경이라고 언급했지만, 사실 브라우저는 완전히 순수한 환경은 아님 
+
+- 다양한 JS 환경 중 브라우저가 전역 스코프 처리 관점에서 가장 순수한 환경이라고 언급했지만, 사실 브라우저는 완전히 순수한 환경은 아님
 - 이유는 DOM 요소에 id 속성을 부여하면 전역 변수가 생기고 이 변수를 통해 해당 DOM 요소에 접근할 수 있기 떄문임
 
 예시 >
+
 ```html
 <!-- 예제.html -->
 <ul id="my-todo-list">
-  <li id="first">
-    JS 공부하기
-  </li>
+  <li id="first">JS 공부하기</li>
 </ul>
 ```
+
 ```javascript
 // 예제.html 에 링크시킨 예제.js
 first;
-console.log("li의 id요소 : ",first);
+console.log('li의 id요소 : ', first);
 
-window["my-todo-list"];
-console.log("ul의 id요소 : ",window["my-todo-list"]);
+window['my-todo-list'];
+console.log('ul의 id요소 : ', window['my-todo-list']);
 ```
 
 > 코드펜 예제 - https://codepen.io/ohgustlrl/pen/bGXJxzo
@@ -2688,33 +2731,38 @@ console.log("ul의 id요소 : ",window["my-todo-list"]);
 - 자동 변수 등록에 의존하는 경우가 있는데 되도록 사용하지 않아야 함
 
 **window.name의 정체**
+
 ```javascript
 var name = 42;
 
 console.log(name, typeof name);
 //"42" string
 ```
+
 - 예시와 별개로 window.name은 브라우저가 전역에 미리 정의해놓은 전역 객체의 프로퍼티임, 이 프로퍼티는 '일반' 전역변수와는 다르게 작동함
 - 예시처럼 var를 사용해 전역 변수를 선언하면 이미 선언된 전역 객체 프로퍼티 name을 섀도잉하지 않으면서 var 선언이 무시되고 숫자 42는 문자열이 됨
 - 이유는 window.name이 사전에 정의된 getter이자 setter이며, setter는 어떤 값을 넣든 문자열로 변환시킨다는 규칙이 있기 때문
 - 브라우저에서 번들러를 거쳐 독립된 파일 형태로 실행되는 JS는 지금까지 살펴본 DOM 전역 변수, window.name 같은 케이스를 빼면 전역 스코프에서 가장 순수하게 동작한다고 함...(이래서 var를 쓰면 안된다는 생각이 저자와는 다르게 좀 강하게 듬..;;;ㅎㅎ)
 
 > DOM 과 관련해서 궁금해서 찾아본 몇 가지
-> 1. DOM 전역 변수 예시에서 브라우저의 전역객체인 window에 전역 변수가 생긴다고 해서 console.log(window)를 찍어보았지만 first나 my-todo-list로 생성된 변수는 찾아 볼수가 없었음  
->  
->     **이유** - 브라우저의 DOM ID속성이 전역 네임스페이스에서 '동적으로 바인딩' 되며, window객체에 직접적인 속성으로 적용되지 않음   
-> 예시에서 first 로 표현했지만 사실 window.first와 같은 형태(네임스페이스로 접근하는 방식)  
-> 요소의 id가 전역 변수로 동작하는 것은 브라우저 환경에서만 지원되는 동작임  
 >
-> 2. my-todo-list는 왜 유효하지 않은 렉시컬 네임이고 first는 유효할까?  
-**이유** - 유효한 렉시컬 이름은 JS의 식별자(identifier) 규칙에 따라 결정됨  
-JS의 유효한 식별자 이름 규칙?  
-  2.1. 첫 글자 - 문자(A-Z), $, _ 로 시작해야 함  
-  2.2. 나머지 문자 - 문자, 숫자, $, _만 포함할 수 있음, 공배그 대시(-), 특수 문자 등은 포함 될 수 없음
-  2.3. 예약어 사용 불가 - var, let, function, class 등  
-  따라서 my-todo-list에는 대시(-) 가 사용되어 유효하지 않은 식별자였음
+> 1.  DOM 전역 변수 예시에서 브라우저의 전역객체인 window에 전역 변수가 생긴다고 해서 console.log(window)를 찍어보았지만 first나 my-todo-list로 생성된 변수는 찾아 볼수가 없었음
+>
+>         **이유** - 브라우저의 DOM ID속성이 전역 네임스페이스에서 '동적으로 바인딩' 되며, window객체에 직접적인 속성으로 적용되지 않음
+>
+>     예시에서 first 로 표현했지만 사실 window.first와 같은 형태(네임스페이스로 접근하는 방식)  
+>     요소의 id가 전역 변수로 동작하는 것은 브라우저 환경에서만 지원되는 동작임
+>
+> 2.  my-todo-list는 왜 유효하지 않은 렉시컬 네임이고 first는 유효할까?  
+>     **이유** - 유효한 렉시컬 이름은 JS의 식별자(identifier) 규칙에 따라 결정됨  
+>     JS의 유효한 식별자 이름 규칙?  
+>      2.1. 첫 글자 - 문자(A-Z), $, * 로 시작해야 함  
+>      2.2. 나머지 문자 - 문자, 숫자, $, *만 포함할 수 있음, 공배그 대시(-), 특수 문자 등은 포함 될 수 없음
+>     2.3. 예약어 사용 불가 - var, let, function, class 등  
+>      따라서 my-todo-list에는 대시(-) 가 사용되어 유효하지 않은 식별자였음
 
 #### 4.2.2 웹 워커
+
 - 웹 워커란 ? 브라우저에서 돌아가는 JS의 작동 방식을 바꿔주는 웹 플랫폼 확장 기능으로 JS파일을 JS 프로그램이 돌아가고 있는 스레드가 아닌 (운영체제가 알아서 만드는) 별도의 스레드에서 돌아갈 수 있게 해주는 것
 - 웹 워커를 사용하는 프로그램은 별도의 스레드에서 실행되기 떄문에 레이스 컨디션(race conditon)이나 기타 경쟁 상태를 막거나 피하려는 목적으로 메인 앱 스레드와 통신이 제한 됨
 - 웹 워커를 사용해 실행되는 코드는 DOM에 접근할 수 없음, navigatior같은 일부 웹 API는 예외
@@ -2722,7 +2770,7 @@ JS의 유효한 식별자 이름 규칙?
 - 웹 워커에서는 DOM 에 접근할 수 없으므로 window객체는 사용불가하며 전역 객체를 참조할 땐 일반적으로 self를 사용함
 
 ```javascript
-var studentName ="폴";
+var studentName = '폴';
 let studentID = 1;
 
 function hello() {
@@ -2732,41 +2780,45 @@ function hello() {
 self.hello();
 console.log(self.studentID);
 ```
+
 > 코드펜 예제 - https://codepen.io/ohgustlrl/pen/poMBxPG
 
 - 메인 js 프로그램과 마찬가지로 var와 function 선언은 self처럼 전역 객체에 미러링 프로퍼티를 생성하지만 let을 비롯한 그 이외의 선언은 미러링 프로퍼티를 생성하지 않음
 - 웹 워커 예시에서 전역 스코프는 일반 JS 프로그램의 전역 스코프와 작동 방식이 거의 같음. DOM과 엮일 일이 없기 떄문에 훨씬 더 순수하게 동작한다고 표현할 수도 있음
 
 #### 4.2.3 개발자 도구와 콘솔, REPL
+
 - 개발자도구는 JS 코드를 처리하긴 하지만 DX라 부르는 개발자 경험을 향상시키기 위해 UX가 설계 돼 있음
 - DX 중심적이며 덜 엄격적으로 코드를 처리하기 때문에 일반적으론 오류가 날 수 있는 코드인데 개발자 도구에서는 오류가 발생하지 않을 수 있음
-- 이러한 차이 중 스코프와 연관된 사례는 다음과 같음  
-    1. 전역스코프의 작동 방식
-    2. 호이스팅(5장-chapter5 변수의 비밀 생명주기 쪽에서 다룰 예정)
-    3. 가장 바깥 스코프에서(let과 const로) 블록 스코프 선언을 할 때(6.3절-chapter6.3 블록으로 스코프 지정에서 다룰 예정)
+- 이러한 차이 중 스코프와 연관된 사례는 다음과 같음
+
+  1. 전역스코프의 작동 방식
+  2. 호이스팅(5장-chapter5 변수의 비밀 생명주기 쪽에서 다룰 예정)
+  3. 가장 바깥 스코프에서(let과 const로) 블록 스코프 선언을 할 때(6.3절-chapter6.3 블록으로 스코프 지정에서 다룰 예정)
 
 - 콘솔이나 REPL(레플 - Read-Eval-Print Loop, 코드를 입력하면 실행하고, 결과를 출력하며 이 과정을 반복하는 환경)을 사용해 가장 바깥 스코프에 문을 입력했을 때, 해당 문은 전역스코프에서 처리 되지 않음
 - 콘솔이나 REPL 환경은 전역 스코프 작동 방식을 모방한 에뮬레이터일 뿐, 엔진이 작동하는 방식을 완벽하게 모방하지 못하기 때문에 JS 명세서와는 다르게 프로그램이 동작할 수 있음
 
 #### 4.2.4 ES모듈
+
 - ES 모듈의 두드러지는 특징은 파일 내 최상위 레벨 스코프 작동 방식임
 
 ```javascript
 // ES6 모듈의 예제
-var studentName = "폴";
+var studentName = '폴';
 
 function hello() {
   console.log(`${studentName}님 하이요?`);
-  
 }
 
 hello();
 
 export default hello;
 ```
+
 - import 를 사용해 예시 코드를 ES 모듈 형태로 불러와 사용하는 경우에도 그냥 단독 파일을 실행하는 것과 동일하게 실행됨
-- 하지만 전체 애플리케이션의 관점에서 관찰되는 현상은 위와 다름  
-  1. studentName과 hello 는 모듈 내에서 최상위 레벨인 가장 바깥 스코프이나 전역변수가 되지 않음  
+- 하지만 전체 애플리케이션의 관점에서 관찰되는 현상은 위와 다름
+  1. studentName과 hello 는 모듈 내에서 최상위 레벨인 가장 바깥 스코프이나 전역변수가 되지 않음
   2. 대신 모듈 범위 스코프의 변수가 됨 (모듈 범위 스코프는 모듈 전역 스코프라고도 함)
   3. 모듈에는 최상위 레벨의 선언을 프로퍼티로 추가할 수 있는 모듈 범위 스코프 객체를 지원하지 않음, 이것이 모듈에 전역 변수가 없다거나 전역 변수에 접근할 수 없다는 뜻은 아님
   4. 모듈 최상위 레벨 스코프에서는 모듈 내 모든 콘텐츠가 함수에 래핑된 것처럼 묶여 처리되고 이는 전역 스코프의 하위 스코프가 됨
@@ -2774,50 +2826,14 @@ export default hello;
 - 다만 알게모르게 웹 API를 사용해야 해서 전역 스코프를 사용하는게 불가피 하므로 이에 대해 알고 있는것이 중요
 
 #### 4.2.5 Node.js
+
 - node.js 는 엔트리 파일을 포함 모든 js파일을 모듈(es모듈 혹은 commonJS 모듈)로 처리하는 특징이 있음
 - 이 특징은 브라우저에서 모듈이 아닌 파일을 로드할 때와 다르게 각 JS파일이 자체 스코프를 갖도록 함
 - node.js는 태생부터 commonJS라는 모듈 형식을 지원했었음
 
 ```javascript
 // nodeJS의 commonJS 모듈의 예제
-var studentName = "폴";
-
-function hello() {
-  console.log(`${studentName}님 하이요?`);
-  
-}
-
-hello();
-
-module.exports.hello =  hello;
-```
-- 위에서 언급했지만 nodejs는 js파일을 모듈로 처리하는 특징이 있음, 이는 var 및 function 선언이 전역 변수로 취급되는 걸 방지하고 선언들을 함수 스코프에 포함시키기 위함임
-- 위의 commonJS 방식의 예시 코드를 nodeJS에서 실행할 경우 아래와 같은 코드로 만들어짐(가상의 코드임)
-```javascript
-// node.js로 위 예시 파일을 실행했을 때의 가상의 코드
-function Module(module, require, __dirname, ...) {
-  var studentName = "폴";
-  
-  function hello() {
-    console.log(`${studentName}님 하이요?`);
-    
-  }
-  
-  hello();
-  
-  module.exports.hello =  hello;
-}
-```
-- nodeJS는 추가 함수 Module() -- 해당 함수는 nodejs 내부에서 모듈을 로드하고 실행하는 매커니즘을 설명하기 위한 개념적 표현임 -- 을 호출해 모듈을 실행함
-- 가상의 코드로 var과 function이 왜 전역이 아니고 모듈 스코프 인지 명쾌하게 알  수 있음
-- 이러한 API의 식별자들은 전역에 없음, 전역 객체의 속성도 아니며, 예시의 Module() 함수에 있는 매개변수처럼 모든 모듈의 스코프에 자동으로 주입됨
-
-- **NodeJS에서 찐 전역 변수 정의 방법?** nodejs의 내장 전역 프로퍼티인 global에 프로퍼티를 추가하는 방법이 유일함
-
-```javascript
-// nodejs에서 global 프로퍼티를 이용하여 전역 변수를 정의하는 예시
-
-global.studentName = "폴";
+var studentName = '폴';
 
 function hello() {
   console.log(`${studentName}님 하이요?`);
@@ -2827,11 +2843,52 @@ hello();
 
 module.exports.hello = hello;
 ```
+
+- 위에서 언급했지만 nodejs는 js파일을 모듈로 처리하는 특징이 있음, 이는 var 및 function 선언이 전역 변수로 취급되는 걸 방지하고 선언들을 함수 스코프에 포함시키기 위함임
+- 위의 commonJS 방식의 예시 코드를 nodeJS에서 실행할 경우 아래와 같은 코드로 만들어짐(가상의 코드임)
+
+```javascript
+// node.js로 위 예시 파일을 실행했을 때의 가상의 코드
+function Module(module, require, __dirname, ...) {
+  var studentName = "폴";
+
+  function hello() {
+    console.log(`${studentName}님 하이요?`);
+
+  }
+
+  hello();
+
+  module.exports.hello =  hello;
+}
+```
+
+- nodeJS는 추가 함수 Module() -- 해당 함수는 nodejs 내부에서 모듈을 로드하고 실행하는 매커니즘을 설명하기 위한 개념적 표현임 -- 을 호출해 모듈을 실행함
+- 가상의 코드로 var과 function이 왜 전역이 아니고 모듈 스코프 인지 명쾌하게 알 수 있음
+- 이러한 API의 식별자들은 전역에 없음, 전역 객체의 속성도 아니며, 예시의 Module() 함수에 있는 매개변수처럼 모든 모듈의 스코프에 자동으로 주입됨
+
+- **NodeJS에서 찐 전역 변수 정의 방법?** nodejs의 내장 전역 프로퍼티인 global에 프로퍼티를 추가하는 방법이 유일함
+
+```javascript
+// nodejs에서 global 프로퍼티를 이용하여 전역 변수를 정의하는 예시
+
+global.studentName = '폴';
+
+function hello() {
+  console.log(`${studentName}님 하이요?`);
+}
+
+hello();
+
+module.exports.hello = hello;
+```
+
 - 중요한것은 **식별자 global은 JS가 아닌 nodejs 정의되었다는 사실**
 
 #### 4.3 globalThis
 
 - 지금까지 살펴본 여러 JS 호스팅 환경에서의 차이 및 특징은 아래와 같이 정리할 수 있음
+
   1. 최상위 레벨 스코프에 var, function 또는 let, const, class를 사용해 전역 변수를 선언할 수 있는데 두 방식에는 차이가 있음
   2. var 또는 function을 사용해 선언하는 경우 해당 선언은 전역 객체의 프로퍼티로 추가됨
   3. 전역 스코프 객체(전역 변수를 추가하거나 검색할 때 프로퍼티로 사용)는 window, self, global로 참조함
@@ -2840,30 +2897,38 @@ module.exports.hello = hello;
 - 다음은 전역 스코프 객체 참조를 얻을 수 있는 꼼수 임
 
 ```javascript
-const theGlobalScopeObject = (new Function("return this"))();
+const theGlobalScopeObject = new Function('return this')();
 ```
+
 <br/>
 
-> eval()함수 와 유사하게 Function() 생성자를 사용하면 문자열에 해당하는 코드로부터 동적으로 함수를 만들수 있는데 (1.5절 런타임에 스코프 변경하기 참조)    
->이렇게 생성한 함수는 (레거시상의 이유로) 비엄격 모드에서 자동으로 실행됨.    
->그러나 비엄격 모드에서 함수 내부의 this는 전역 객체를 가리키므로 (new Function("return this"))();는 전역 객체를 반환함.
+> eval()함수 와 유사하게 Function() 생성자를 사용하면 문자열에 해당하는 코드로부터 동적으로 함수를 만들수 있는데 (1.5절 런타임에 스코프 변경하기 참조)  
+> 이렇게 생성한 함수는 (레거시상의 이유로) 비엄격 모드에서 자동으로 실행됨.  
+> 그러나 비엄격 모드에서 함수 내부의 this는 전역 객체를 가리키므로 (new Function("return this"))();는 전역 객체를 반환함.
 
 - window, self, global 외에도 위와 같은 방법으로 전역 객체를 참조하는 꼼수가 있으며, 이 외에도 다른 방법들이 있으며 각각 장단점이 있음
 - 방법은 다양하지만 ES2020에서 전역 스코프 객체 참조가 globalThis로 표준화 됐기 때문에 다른 꼼수는 패쓰!
 - JS 엔진 상태에 따라 다를 수 있지만 globalThis를 사용하면 전역 스코프 객체를 참조할 수 있고, 혹여라도 지원하지 않는 경우 다음과 같은 폴리필을 사용해 호스트 환경에 상관없이 사용할 수 있음
+
 ```javascript
-const theGlobalScopeObject = 
-  (typeof globalThis != 'undefined') ? globalThis : 
-  (typeof global != 'undefined') ? global : 
-  (typeof window != 'undefined') ? window :
-  (typeof self != 'undefined') ? self :
-  (new Function('return this'))();
+const theGlobalScopeObject =
+  typeof globalThis != 'undefined'
+    ? globalThis
+    : typeof global != 'undefined'
+    ? global
+    : typeof window != 'undefined'
+    ? window
+    : typeof self != 'undefined'
+    ? self
+    : new Function('return this')();
 ```
-> globalThis 라는 이름이 제안되고 명세서에 추가되기까지 상당한 논란이 있었음    
-> 이 객체를 참조하는 이유는 전역 스코프에 액세스 하기 위함인데 마치 this 바인딩에 액세스 하기 위한 것 같이 이름이 지어져서였음    
+
+> globalThis 라는 이름이 제안되고 명세서에 추가되기까지 상당한 논란이 있었음  
+> 이 객체를 참조하는 이유는 전역 스코프에 액세스 하기 위함인데 마치 this 바인딩에 액세스 하기 위한 것 같이 이름이 지어져서였음  
 > 여러 의견이 분분했고 다양한 이름이 후보에 올랐지만 결국 globalThis가 채택됐다고 함
 
 #### 4.4 정리
+
 - 모듈 단위로 쪼개는 개발 방식이 많이 자리 잡히며 네임스페이스에 식별자를 저장하는 방식을 많이 사용하지 않는 현재지만 전역 스코프는 모든 js 프로그램에 존재하고 중요한 역할을 함
 - 호스트 환경별로 전역 스코프와 전역 스코프 객체가 어떤 차이를 보이는지 확실히 아는 것이 중요
 
@@ -2894,10 +2959,85 @@ const theGlobalScopeObject =
 >  <p>A3. globalThis</p>
 > </details>
 > <br/>
-><details>
+> <details>
 >  <summary>Q4. Node.js 환경에서 전역 변수를 선언하려면 어떤 객체를 사용해야 하나요? <br/>
 > </summary>
 > <br/>
 >  <p>A4. global</p>
 > </details>
 > <br/>
+
+### CHAPTER 5. 변수의 비밀 생명주기
+
+### CAHPTER 6. 스코프 노출 제한
+
+- 프로그램 전체에 적용되는 결정 사항의 스코프 노출을 제한하는 패턴을 알아보는 챕터
+
+#### 6.1 최소 노출의 원칙(POLE)
+
+- POLE ? 최소 노출의 원칙(Principle of least exposure) .
+- 이것은 정보 보안 분야의 POLP(Principle of least privilege) 라고 불리는 최소 권한의 원칙을 변형한 것.
+- 이런 최소 노출의 원칙을 따라 설계할 때 스코프마다 등록된 변수의 노출을 최소화 할 수 있음
+- 스코프의 변수를 최소화 하면 이름 충돌, 예기치 않은 작동, 의도하지 않은 종속성을 방지할 수 있음
+- 최대한 가장 낮은 스코프(가장 깊은 중첩 스코프)에 변수와 함수 선언을 숨기는 것이 중요
+
+#### 6.2 일반(함수) 스코프에 숨기기
+
+- 스코프 내애 var나 함수 선언을 숨기는 방법으로는 이를 함수 스코프로 감싸는 방법을 사용할 수 있음
+- 이런 함수 스코프 지정이 유용한 경우는 메모리에 캐시를 사용하는 메모이제이션 방법을 사용할 때 이다.
+- 이렇게 변수나 함수를 숨겨야 할 때는 특이한 함수명을 지어 선언하는 방법보다는 함수 표현식을 사용하는 것이 더 나은 해결책이 될 수 있음
+
+#### 6.2.1 함수 표현식 즉시 호출하기
+
+- 6.2장의 예시에서 사용한 함수 표현식에는 즉시 실행 함수(IIFE)를 사용함
+- IIFE 는 변수나 함수를 숨기는 스코프를 만들고 싶을 때 유용함
+- 일관성을 위해 IIFE의 function은 항상 ()로 묶어주는 것이 좋다.
+
+  **함수의 경계**
+
+- 스코프를 정의할 목적으로 IIFE를 사용하면 의도하지 않은 결과가 발생할 수 있으므로 주의해야 함
+- 꼭 IIFE가 최선의 접근 방식이 아닐 수 있음, 함수 대신 블록을 사용해 스코프를 만드는 방법을 사용할 수도 있음
+
+#### 6.3 블록으로 스코프 지정
+
+- 블록은 let이나 const같은 블록 스코프 선언을 포함해야 할 필요가 있을 때만 스코프로 작용 함
+- 모든 중괄호 쌍이 항상 블록 스코프를 생성하는 건 아님
+
+  1. 객체 리터럴은 {}를 사용해 키값 목록을 구분하지만 스코프는 아님
+  2. class는 {}를 사용해 본문을 정의하지만 블록이나 스코프가 아님
+  3. function은 본문을 감쌀 때 {}를 사용하지만 이는 함수 본문을 나타내는 문이므로 블록 스코프를 형성하지 않음
+  4. case 절 주변의 switch 구문에 사용되는 {}도 블록이나 스코프를 정의하지 않음
+
+- 블록 스코프를 지원하는 대부분의 프로그래밍 언어에서 명시적으로 블록 스코프를 만드는 건 변수의 범위를 좁히는 일반적인 패턴
+
+#### 6.3.1 var와 let
+
+- var를 사용하는 데 의미론적, 기술적 이유가 있음
+- var는 js의 초장기부터 '전체 함수에 속한 변수'를 의미했음
+- var는 선언된 위치와 상관없이 가장 가깝게 감싼 함수 스코프에 붙음
+- 따라서 var는 함수의 최상위 스코프에서 사용하는게 좋음
+- var는 let과 시각적으로 구분되므로 명확한 의도를 전달할 수 있음
+- var는 함수 스코프, let은 블록 스코프라는 의미 전달에 효과적일 수 있음
+
+#### 6.3.2 let의 위치
+
+- let은 변수를 최소한으로 노출시키면서 요구 사항을 충족하는 스코프는 어디인가? 라는 질문을 스스로에게 던지고 고민하고 그에 대한 답을 찾으면 블록 스코프에 위치시킬지 함수 스코프에 위치시킬지 판단할 수 있음
+- 혹 변수를 블록 스코프에 위치시켰는데 나중에 함수 스코프로 올려야 한다는 것을 알았을 땐 변수의 선언 위치뿐만 아니라 선언한 키워드도 변경하면 됨
+- (필자 의견) 선언이 블록 스코프에 속해 있다면 let, 함수 스코프에 있다면 var를 사용하는 것을 권장
+
+#### 6.3.3 catch와 스코프
+
+- catch 절에서 선언된 변수는 catch 절 밖에서는 사용할 수 없음
+- catch 절로 선언한 err변수는 해당 블록으로 블록 스코프가 지정됨
+
+#### 6.4 블록 내 함수 선언
+
+- 블록 내 함수를 선언하는 것을 FiB(function declarations in blocks) 라고 함
+- FiB를 사용한 경우 JS의 실행환경에 따라 결과가 달라짐
+  1. ReferenceError 예외와 함께 호출 실패
+  2. TypeError와 함께 호출 실패
+- FiB는 변덕스러우니 FiB를 완전히 피해야 실용적으로 코드를 작성할 수 있음
+
+#### 6.5 정리
+
+- 렉시컬 스코프 규칙의 핵심 ? 규칙에 맞게 코드를 작성하면 프로그램의 변수를 운영 목적과 의미에 맞게 체계화 할 수 있음
