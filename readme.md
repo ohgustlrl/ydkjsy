@@ -95,6 +95,19 @@
       - [6.3.3 catch와 스코프](#633-catch와-스코프)
       - [6.4 블록 내 함수 선언](#64-블록-내-함수-선언)
       - [6.5 정리](#65-정리)
+    - [CHAPTER 7. 클로저 사용법](#chapter-7-클로저-사용법)
+      - [7.1 클로저 관찰하기](#71-클로저-관찰하기)
+      - [7.1.1 화살표 함수의 스코프](#711-화살표-함수의-스코프)
+      - [7.1.2 추가되는 클로저](#712-추가되는-클로저)
+      - [7.1.3 스냅숏이 아닌 라이브링크](#713-스냅숏이-아닌-라이브링크)
+      - [7.1.4 쉽게 관찰할 수 있는 클로저: Ajax와 이벤트](#714-쉽게-관찰할-수-있는-클로저-ajax와-이벤트)
+      - [7.1.5 보이지 않으면 어떡하죠?](#715-보이지-않으면-어떡하죠)
+      - [7.1.6 관찰 가능성 관점에서 클로저의 정의](#716-관찰-가능성-관점에서-클로저의-정의)
+      - [7.2 클로저 생명주기와 가비지 컬렉션](#72-클로저-생명주기와-가비지-컬렉션)
+      - [7.2.1 변수 혹은 스코프](#721-변수-혹은-스코프)
+      - [7.3 다른 관점](#73-다른-관점)
+      - [7.4 클로저를 사용하는 이유](#74-클로저를-사용하는-이유)
+      - [7.5 정리](#75-정리)
 
 ## Part 1
 
@@ -3041,3 +3054,601 @@ const theGlobalScopeObject =
 #### 6.5 정리
 
 - 렉시컬 스코프 규칙의 핵심 ? 규칙에 맞게 코드를 작성하면 프로그램의 변수를 운영 목적과 의미에 맞게 체계화 할 수 있음
+
+### CHAPTER 7. 클로저 사용법
+
+- 프로그램 구조를 설계하는 데 스코프를 효과적으로 사용할 줄 알아야 함
+- 그리고 클로저는 그 핵심
+- 클로저 또한 이전 장에서의 POLE을 기반으로 함
+
+**클로저 사용의 이점**
+
+1. 스코프 노출이 최소화 되어 유지 보수 하기 쉽다.
+2. 스코프 함정 문제(이름 충돌 등)을 피할 수 있다.
+3. 변수를 오랫동안 유지해야 하는 경우, 변수를 외부 스코프에 두는 대신 더 제한된 스코프로 캡슐화 할 수 있다.
+4. 함수 내부에서 함수 밖 해당 변수에 계속 접근할 수 있어 변수를 더 넓은 버위에서 사용할 수 있다.
+
+- 이번 장에서는 클로저의 모든 측면을 살펴보기 위해 수많은 논의와 코드를 살펴본다.
+
+#### 7.1 클로저 관찰하기
+
+- 클로저는 람다 대수에서 유래한 수학적 개념
+
+**실용적 관점에서의 클로저**
+
+- 클로저는 오직 함수만 가질 수 있음
+- 클로저를 관찰하려면 함수를 반드시 호출해야 함
+- 호출된 함수는 해당 함수를 정의한 스코프 체인이 아닌 다른 분기에서 호출되어야 함
+
+```javascript
+// 외부/전역 스코프
+
+function lookupStudent(studentID) {
+  //함수 스코프 1
+  var student = [
+    { id: 1, name : "폴" }
+    { id: 2, name : "슈슉" }
+    { id: 3, name : "망푸" }
+  ];
+
+  return function greetStudent(greeting) {
+    // 함수 스코프 2
+    var student = students.find(
+      student => student.id == studentID
+    );
+
+    return `${ greeting}, ${student.name} 님!`;
+  };
+}
+
+var chosenStudents = [
+  lookupStudent(1),
+  lookupStudent(2),
+  lookupStudent(3),
+];
+
+//함수 이름 접근
+chosenStudents[0].name; // greetStudent
+
+chosenStudents[0]("안녕하세요?"); // 안녕하세요? 폴 님!
+chosenStudents[0]("하이?"); // 하이? 슈슉 님!
+chosenStudents[0]("곤방와?"); // 곤방와? 망푸 님!
+
+```
+
+- lookupStudent() 가 호출되면 내부 함수 greetStudent()가 개별 인스턴스를 생성하고 chosenStudents 배열에 저장
+- 예시에서 lookupStudent를 두번 호출하는데, 호출이 종료 될 때 함수 내부의 변수는 가비지 컬렉션의 대상이 되지 않는다.
+- 클로저는 외부 스코프가 종료된 후(lookupStudent()의 각 호출이 완료된 시점)에도 greetStudent()가 외부 변수에 계속 접근할 수 있게 해줌
+
+#### 7.1.1 화살표 함수의 스코프
+
+- find() 메서드에 콜백으로 전달된 화살표 함수의 매개변수 student는 상위 스코프에 있는 student를 섀도잉 함
+- find() 메서드에 콜백으로 전달된 화살표 함수도 클로저를 형성할 수 있음
+
+#### 7.1.2 추가되는 클로저
+
+**클로저와 함꼐 자주 인요오디는 대표적인 예제**
+
+```javascript
+function adder(num1) {
+  return function addTo(num2) {
+    return num1 + num2;
+  };
+}
+
+var addTo10 = adder(10);
+var addTo42 = adder(42);
+
+addTo10(15); // 25
+addTo42(9); // 51
+```
+
+- 인수 (10, 42)와 함께 adder()를 호출할 때 생성되는 addTo 인스턴스는 클로저를 통해 자신만의 num1 변수를 기억함
+- 따라서 호출이 끝난 이후에도 num1이 사라지지 않고 이후에 호출하는 addTo10(15)의 결과가 25가 됨을 알 수 있음
+- 클로저는 단순히 함수의 코드에 의해 정의(단일 렉시컬 정의)되는 게 아니라 함수 인스턴스에 따라 다르게 생성됨
+- 각 내부 함수 인스턴스는 adder()를 실행할 때의 변수와 환경을 기억해 각자 자신만의 독립적인 클로저를 갖게 됨
+- 클로저는 렉시컬 스코프에 기반을 두고 있고 컴파일 시 처리되긴 하지만, 실제로 클로저의 동작은 실행 시점에 함수 인스턴스에 따라 달라지는 특성이다
+
+#### 7.1.3 스냅숏이 아닌 라이브링크
+
+- 클로저는 변수의 순간 상태를 기록한 스냅숏이 아닌 실시간으로 변수 자체에 언제든 접근할 수 있도록 관계를 맺어주는 라이브 링크이다
+- 따라서 클로저를 통해 값을 읽는 것 뿐만 아니라 수정(재할당)할 수 있음
+
+```javascript
+function makeCounter() {
+  var const = 0;
+
+  return function getCount() {
+    count = count + 1;
+    return count;
+  };
+}
+
+var hits = makeCounter();
+
+hits(); // 1
+hits(); // 2
+hits(); // 3
+```
+
+- 예제처럼 hits() 함수를 호출하면 count에 접근해 변수를 업데이트 할 수 있음
+- 그에 따른 결과로 호출할 때 마다 반환되는 값이 증가함을 확인할 수 있음
+- 클로저의 외부 스코프는 일반적으로 함수에서 유래하지만 꼭 함수일 필요는 없음
+- 내부 함수를 감싸는 외부 스코프가 존재하기만 해도 클로저가 되기는 함
+- 클로저를 변수가 아닌 값과 연관되어 있는 개념으로 착각하면 안됨
+- 값과 연관된 개념으로 착각하면 특정 시점의 값을 보존할 수 있다고 착각할 수 있으며 이는 원치 않는 겨로가를 유발함
+- 반복문 안에 함수를 정의하는 것도 이런 오해에서 비롯된 대표적 실수
+
+```javascript
+// 실수의 예제
+
+var keeps = [];
+
+for (var i = 0; i < 3; i++) {
+  keeps[i] = function keepI() {
+    return i;
+  };
+}
+
+keeps[0](); //3
+keeps[1](); //3
+keeps[2](); //3
+```
+
+- [0]에는 0, [1]에는 1, [2]에는 2 이 나올것이라 착각한 예제임
+- for 문의 구조상 각 이터레이션마다 새로운 변수 i가 생긴다고 생각하기 쉽지만, 이 프로그램은 i를 var로 선언했기 때문에 i가 하나만 존재함
+
+```javascript
+// 원하는 결과를 출력할 수 있는 코드로 리팩터링
+
+var keeps = [];
+
+for (var i = 0; i < 3; i++) {
+  let j = i;
+
+  keeps[i] = function keepJ() {
+    return j;
+  };
+}
+
+keeps[0](); //0
+keeps[1](); //1
+keeps[2](); //2
+```
+
+- 예제처럼 변수인 j에 대해 클로저를 형성시키면 각 j는 반복문을 순회할 시점마다 i의 값을 복사받게 됨
+- 이렇게 만들어진 j는 재할당이 되지 않고 원하는 결과를 출력함
+
+```javascript
+// 원하는 결과를 출력할 수 있는 또 다른 방법
+
+var keeps = [];
+
+for (let i = 0; i < 3; i++) {
+  keeps[i] = function keepI() {
+    return i;
+  };
+}
+
+keeps[0](); //0
+keeps[1](); //1
+keeps[2](); //2
+```
+
+- for 루프에서 초깃값을 let으로 선언하면 반복마다 새로운 변수가 생성되기 때문에 원하는 결과를 출력할 수 있음
+
+#### 7.1.4 쉽게 관찰할 수 있는 클로저: Ajax와 이벤트
+
+- 클로저는 콜백을 다룰 때 흔히 관찰할 수 있음
+
+1. 콜백 예제
+
+```javascript
+function lookupStudentRecord(studentID) {
+  ajax(`https://some.api/student/${studentID}`, function onRecord(record) {
+    console.log(`${record.name} (${studentID})`);
+  });
+}
+
+lookupStudentRecord(1); //폴 (1)
+```
+
+- onRecord() 콜백은 미래의 어느 시점, Ajax 호출로부터 응답을 받은 경우 호출되는데, 이런 비동기적 실행 환경에서도 콜백 함수가 studendID에 접근할 수 있는 이유는 클로저 때문
+
+2. 이벤트 핸들러 예제
+
+```javascript
+function listenForClicks(btn, label) {
+  btn.addEventListener('click', function onClick() {
+    console.log(`${label} 버튼을 클릭했습니다.`);
+  });
+}
+
+var submitBtn = document.getElementById('submit-btn');
+
+listenForClicks(submitBtn, 'Checkout');
+```
+
+- label 매개변수는 onClick() 이벤트 핸들러 콜백에 의해 클로저로 둘러싸여 있음
+- 따라서 버튼을 새롭게 클릭해도 label은 여전히 존재하기 때문에 같은 로그가 출력됨을 알 수 있으며 이 또한 클로저의 한 예제임
+
+#### 7.1.5 보이지 않으면 어떡하죠?
+
+- 클로저를 정의할 때 "관찰 가능성" 을 강조함
+- 만약 클로저를 관찰할 수 없다면? 이런 관점을 강조하기 위해 클로저에 기반하지 않은 몇 가지 예제를 살펴봄
+
+1. 렉시컬 스코프 탐색을 일으키는 함수를 호출하는 예제
+
+```javascript
+function say(myName) {
+  var greeting = '하이?';
+  output();
+
+  function output() {
+    console.log(`${greeting}, ${myName} 님!`);
+  }
+}
+
+say('보라'); // 하이? 보라 님!
+```
+
+- output() 함수는 자신을 감싸는 스코프에서 변수 greeting, myName에 접근하지만 output() 함수를 호출하는 곳은 greeting, myName 과 동일 스코프이기 때문에, 여기서 관찰할 수 있는 것은 렉시컬 스코프 이다.
+
+2. 전역 스코프 예시
+
+```javascript
+var students = [
+ { id: 1, name : "폴" }
+ { id: 2, name : "슈슉" }
+ { id: 3, name : "망푸" }
+];
+
+function getFirstStudent() {
+  return function firstStudent() {
+    return students[0].name;
+  };
+}
+
+var student = getFirstStudent();
+
+student(); // 폴
+```
+
+- firstStudent() 함수가 students 변수에 접근할 수 있었던 것은 클로저 때문이 아니라 단순히 렉시컬 스코프 법칙 떄문
+
+3. 변수가 존재하기만 하고 한 번도 해당 변수에 접근하지 않은 경우의 예제
+
+```javascript
+function lookupStudent(studentID) {
+  return function nobody() {
+    var msg = '아직 아무도 없음';
+    console.log(msg);
+  };
+}
+
+var student = lookupStudent(112);
+
+student(); // 아직 아무도 없음
+```
+
+- nobody() 함수는 외부 변수를 클로저로 둘러싸지 않고 자체 변수 msg만 사용함
+- studentID는 둘러싼 스코프에 존재하지만 nobody()에 의해 참조되지 않음
+- js엔진은 lookupStudent() 함수의 실행이 종료된 후에 studentID를 유지할 필요가 없어 가비지 컬렉션을 통해 메모리를 정리하려고 함
+
+4. 함수를 호출하지 않는 경우의 예제
+
+```javascript
+function greetSutdent(studentName) {
+  return function greeting() {
+    console.log(`안녕하세요 $ {studentName } 님`);
+  };
+}
+
+greetStudent('폴');
+
+// 아무 일도 일어나지 않음
+```
+
+- 함수를 호출하긴 했으나 내부함수 greeting()을 호출하지 않음
+- 이론적으로 greeting은 studentName에 대한 클로저를 형성했지만 실제로는 호출되지 않았기 때문에 클로저가 활용되지 않음
+
+#### 7.1.6 관찰 가능성 관점에서 클로저의 정의
+
+1. 반드시 함수와 관련되어야 한다.
+2. 외부 스코프의 변수를 적어도 하나 이상 참조해야 한다.
+3. 참조하려는 변수가 있는 스코프 체인의 다른 분기에서 함수를 호출해야 한다.
+
+- 클로저는 단순히 학술적이고 간접적인 개념이 아닌 프로그램의 작동에 직접적이고 구체적인 영향을 미치는 개념이라는데 주안점을 둬야 함
+- 개발할 때 클로저의 존재와 그 효과를 고려하여 설계하는게 중요함
+
+#### 7.2 클로저 생명주기와 가비지 컬렉션
+
+- 10개의 함수가 한 변수를 감싸 클로저를 형성할 때, 시간이 지남에 따라 이 중 9개의 함수 참조가 버려지더라도 유일하게 남은 함수 참조 때문에 여전히 해당 변수는 보존
+- 마지막 함수 참조가 삭제되면 변수에 대한 클로저가 사라지고 변수는 가비지 컬렉션 처리됨
+- 이런 클로저의 특성은 효율적이고 성능이 뛰어난 프로그램을 구축하는 데 큰 영향을 줌
+- 다만 클로저는 변수의 가비지 컬렉션을 예기치 않게 막아 메모리 사용을 급증시키는 요인이 될 수 있음
+- 더 이상 필요하지 않은 함수 참조는 제때 삭제하는 게 중요
+
+```javascript
+function manageBtnClickEvents(btn) {
+  var clickHandlers = [];
+
+  return function listener(cb) {
+    if (cb) {
+      let clickHandler = function onClick(evt) {
+        console.log('클릭했습니다!');
+        cb(evt);
+      };
+      clickHandlers.push(clickHandler);
+      btn.addEventListener('click', clickHandler);
+    } else {
+      // 모든 클릭 핸들러를 제거
+      for (let handler of clickHandlers) {
+        btn.removeEventListener('click', handler);
+      }
+      clickHandlers = [];
+    }
+  };
+}
+
+// 예제 사용법
+var mySubmitBtn = document.getElementById('myButton');
+var onSubmit = manageBtnClickEvents(mySubmitBtn);
+
+onSubmit(function checkout(evt) {
+  console.log('체크아웃 중');
+});
+
+onSubmit(function trackAction(evt) {
+  console.log('트래킹 중');
+});
+
+// 모든 핸들러 구독 취소
+onSubmit();
+```
+
+- 내부 함수 onClick()은 전달받은 cb(이벤트 콜백)에 대한 클로저를 유지합니다.
+- 즉 이벤트 핸들러를 구독하는 한 checkout()과 trackAction() 함수 표현식의 참조는 클로저를 통해 유지 됨
+- 마지막 줄 처럼 onSubmit()을 호출하면 모든 이벤트 핸들러 구독이 취소되고 clickHandlers() 배열이 비워짐
+- 클릭 핸들러 함수 참조가 모두 폐기되면 checkout(), trackAction()에 대한 cb 참조의 클로저도 폐기
+- 프로그램의 전반적인 상태와 효율성을 고려할 때 이벤트 핸들러가 더 이상 필요하지 않을 때 구독을 취소하는 것이 첫 번째 구독보다 훨씬 더 중요함
+
+#### 7.2.1 변수 혹은 스코프
+
+- 클로저를 참조된 외부 변수에만 적용되는 것으로 생각해야 할지, 아니면 전체 스코프 체인과 그 안의 모든 변수를 대상으로 적용된다고 생각해야 할지 고민해야 됨
+- 개념만 따졌을 때 클로저는 변수를 기준으로 작동하며 스코프를 기준으로 작동하지는 않음
+- 하지만 현실은 개념보다 더 복잡함
+
+**예시 1**
+
+```javascript
+function manageStudentGrades(studentRecords) {
+  var grades = studentRecords.map(getGrade);
+
+  function getGrade(record) {
+    return record.grade;
+  }
+
+  function sortAndTrimGradesList() {
+    // 내림차순으로 성적 정렬
+    grades.sort(function desc(g1, g2) {
+      return g2 - g1;
+    });
+
+    // 상위 10개 성적만 저장
+    grades = grades.slice(0, 10);
+  }
+
+  function addGrade(newGrade) {
+    grades.push(newGrade);
+    sortAndTrimGradesList();
+    return grades;
+  }
+
+  return addGrade;
+}
+
+// 학생 성적 관리 초기화
+var addNextGrade = manageStudentGrades([
+  { id: 14, name: '가영', grade: 86 },
+  { id: 73, name: '보람', grade: 87 },
+  { id: 112, name: '지수', grade: 75 },
+  { id: 6, name: '호진', grade: 91 },
+]);
+
+// 성적 추가
+addNextGrade(81); // 새로운 성적 추가
+addNextGrade(68); // 새로운 성적 추가
+```
+
+- 외부함수 manageStudentGrades()는 학생들의 성적 목록을 받아서 addGrade() 함수 참조를 반환
+- 외부 스코프에서 이 함수 참조를 addNextGrade()로 지정정
+- addNextGrade()는 새로운 성적을 사용해 호출할 때마다 상위 10개 성적을 내림차순으로 정렬해 최신 목록을 반환(sortAndTrimGradesList() 참조)
+- manageStudentGrades() 호출이 종료된 후와 여러 addNextGrade()를 호출하는 사이에 grades 변수는 클로저를 통해 addGrade() 내부에 보존됨
+- 이 덕에 상위권 학생 목록을 유지함
+- 이는 변수를 담고 있는 배열이 아닌 grades 변수 자체를 클로저를 통해 기억하기 떄문
+
+**예제에서의 다른 대상들**
+
+1. addGrade() 함수가 sortAndTrimGradesList() 함수 식별자를 대상으로 클로저를 형성함
+2. 변수이자 함수인 getGrade는 manageStudentGrades() 함수가 형성하는 외부 스코프에서 .map(getGrade)를 통해 참조됨
+   - 클로저는 함수가 외부 스코프의 변수를 기억할 때 형성되기 때문에 getGrade는 클로저 관점에서 볼 때 프로그램 후반부의 가비지 컬렉션 대상이 될 수 있음
+3. studentRecords는 메모리에 유지되는가? 만약 그렇다면 학생들의 성적 기록을 담은 배열은 절대 가비지 컬렉션 처리되지 않아 생각보다 훨씬 많은 메모리를 차지하게 됨
+   - 클로저는 변수를 기준으로 형성된다는 정의를 생각하면 getGrade와 studentRecords를 참조하는 내부 변수가 없으므로 이 두 변수는 클로저를 형성하지 않음
+   - 두 변수는 manageStudentGrades() 함수의 호출이 완료된 직후 가비지 컬렉션 대상이 될 수 있음
+
+- addGrade() 함수 안에 중단점을 사용해 디버깅해보면 인스펙터에는 studentRecords 변수가 표시되지 않고, 이는 클로저를 통해서 studentRecords를 메모리에 유지하지 않는다는 증거를 나타냄
+
+**예시 2**
+
+```javascript
+function storeStudentInfo(id, name, grade) {
+  return function getInfo(whichValue) {
+    // 경고: `eval()`을 사용하는 것은 나쁜 생각입니다.
+    var val = eval(whichValue);
+    return val;
+  };
+}
+
+var info = storeStudentInfo(73, '보라', 87);
+
+console.log(info('name')); // "보라"
+console.log(info('grade')); // 87
+```
+
+- getInfo() 함수는 명시적으로는 id, name, greade를 대상으로 클로저를 형성하지 않음
+- 단, eval() 렉시컬 스코프 꼼수를 사용하면 info() 호출 시 세 변수에 접근할 수 있음
+- 내부 함수에서 명시적으로 변수를 참조하지 않았지만 클로저를 통해 모든 변수가 확실히 보존 된 것을 확인할 수 있음
+- 그렇담 클로저가 변수 기준이 아닌 스코프 기준으로 작동한다고 주장할 수 있을까? 이것은 상황에 따라 달라짐
+- 현대의 많은 js엔진은 명시적으로 참조되지 않는 변수를 클로저 스코프에서 제거하는 최적화 방식을 적용함
+- eval()과 같은 특정 상황에서는 이 최적화를 적용할 수 없어 모든 변수가 클로저 스코프에 남아 있는 경우가 있음
+
+**정리**
+
+1. 클로저는 구현 측면에서 스코프 단위로 이뤄짐
+2. 클로저는 함수가 정의된 스코프 전체를 포함할 수 있으며 이는 함수가 외부 스코프의 모든 변수에 접근할 수 있음을 의미
+3. 현대 js엔진 상당수는 클로저를 최적화해 실제 함수 내에서 참조되는 변수만 클로저에 포함
+   - 이는 클로저가 포함하는 스코프의 크기를 줄이고, 필요하지 않은 변수를 제거해 메모리 사용량을 줄임
+4. 최적화는 명세서에 언급되어 있는 명세가 아니며 엔진의 선택 사항
+5. 따라서 메모리 사용량 측면에서 수동으로 값을 버리는 쪽이 더 안전함
+
+- 프로그램에서 클로저가 어디에 있고 어떤 변수를 포함하는지 파악하는게 중요
+- 메모리를 낭비하지 않고 최소한으로 필요한 만큼만 사용할 수 있게 클로저를 신중히 관리해야 함
+
+#### 7.3 다른 관점
+
+- 현재 관점으로는 함수가 전달 및 호출될 때마다 클로저는 함수가 정의된 원래 스코프에 대한 링크를 제공하기 때문에 함수는 클로저로 둘러싸인 변수에 쉽게 접근할 수 있음
+- 이에 더해 js에서 함수는 이리저리 전달 가능하다는 본질에 기반한 관점을 추가하면 좋음
+- 클로저는 프로그램의 다른 부분에서 해당 함수 인스턴스에 대한 참조가 존재하는 한 함수 인스턴스와 그 전체 스코프 환경 및 스코프 체인을 살아 있게 유지할 수 있음
+- 두 관점 모두 클로저를 이용하는 데 유용함
+- 사람에 따라 어떤 모델이 더 이해하기 쉬운지 다르나, 어느 쪽을 선택하든 프로그램에서 관찰 가능한 결과는 동일함
+
+#### 7.4 클로저를 사용하는 이유
+
+- 페이지에서 버튼이 클릭되면 Ajax 요청을 통해 데이터를 가져와 전송해야 하는 예시
+
+**1. 클로저를 사용하지 않은 코드**
+
+```javascript
+var APIEndpoints = {
+  studentIDs: 'https://some.api/register-students',
+  // 다른 엔드포인트 추가 가능
+};
+
+var data = {
+  studentIDs: [14, 73, 112, 6],
+  // 다른 데이터 추가 가능
+};
+
+function makeRequest(evt) {
+  var btn = evt.target;
+  var recordKind = btn.dataset.kind;
+
+  ajax(APIEndpoints[recordKind], data[recordKind]);
+}
+
+// HTML 버튼 예제
+/*
+<button data-kind="studentIDs">
+    학생 등록
+</button>
+*/
+
+// 이벤트 리스너 추가
+btn.addEventListener('click', makeRequest);
+```
+
+- makeRequest() 유틸리티는 클릭 이벤트로부터 이벤트 객체만 받고 거기서 타깃 버튼 요소의 data-kind 특성을 가져옴
+- 해당 값을 사용해 API 엔드포인트의 URL과 Ajax 요청에 포함해야 하는 데이터를 모두 조회함
+- 코드는 정상이나 이벤트 핸들러가 실행될 때마다 DOM 속성을 매번 읽어야 한다는 점은 비효율적
+
+**2. 클로저를 사용해 개선한 코드**
+
+```javascript
+var APIEndpoints = {
+  studentIDs: 'https://some.api/register-students',
+  // 다른 엔드포인트 추가 가능
+};
+
+var data = {
+  studentIDs: [14, 73, 112, 6],
+  // 다른 데이터 추가 가능
+};
+
+function setupButtonHandler(btn) {
+  var recordKind = btn.dataset.kind;
+
+  btn.addEventListener('click', function makeRequest(evt) {
+    ajax(APIEndpoints[recordKind], data[recordKind]);
+  });
+}
+
+// HTML 버튼 예제
+/*
+<button data-kind="studentIDs">
+    학생 등록
+</button>
+*/
+
+// 버튼 핸들러 설정
+setupButtonHandler(btn);
+```
+
+1. setupButtonHandler()를 사용해 초기 설정 때 data-kind 속성을 한번만 가져와 변수 recordKind에 할당
+2. recordKind는 내부의 클릭 핸들러인 makeRequest()함수로 인해 닫히고, recordKind는 이벤트가 발생할 때마다 전달할 URL과 데이터를 찾는데 사용
+3. setupButtonHandler() 함수 안에 recordKind를 추가함으로써 프로그램 내에서 조금 더 적절한 부분집합에만 변수가 노출되로록 제한
+
+- 이 패턴을 코드에 적용하면 설정 시 URL과 데이터를 모두 한번에 조회함
+
+```javascript
+function setupButtonHandler(btn) {
+  var recordKind = btn.dataset.kind;
+  var requestURL = APIEndpoints[recordKind];
+  var requestData = data[recordKind];
+
+  btn.addEventListener('click', function makeRequest(evt) {
+    ajax(requestURL, requestData);
+  });
+}
+```
+
+- 클로저를 기반으로 하는 함수형 프로그래밍 패러다임의 대표적인 기법 두 가지는 부분적용과 커링
+- 여러 입력이 필요한 함수의 모양을 바꿔서 미리 입력하거나 나중에 입력하는 기법
+- 초기 입력은 클로저를 통해 기억되고 입력이 모두 제공되면 기본 작업이 수행
+- 클로저를 통해 내부에 정보를 캡슐화하는 함수 인스턴스를 만들면 나중에 입력을 다시 제공할 필요 없이  
+  정보를 저장한 함수를 다시 사용할 수 있음
+
+**위 내용을 적용한 리팩터링 코드**
+
+```javascript
+function defineHandler(requestURL, requestData) {
+  return function makeRequest(evt) {
+    ajax(requestURL, requestData);
+  };
+}
+
+function setupButtonHandler(btn) {
+  var recordKind = btn.dataset.kind;
+  var handler = defineHandler(APIEndpoints[recordKind], data[recordKind]);
+
+  btn.addEventListener('click', handler);
+}
+```
+
+1. requestURL과 requestData 입력이 미리 제공되어 makeRequest()함수가 부분 적용됨
+2. 지역에서 handler라는 이름이 붙음
+3. 이벤트가 발생하면 마지막 입력(evt 무시)을 handler에 전달
+4. 입력이 완료되면 근본적인 Ajax 요청이 시작
+
+#### 7.5 정리
+
+**클로저를 이해하기 위한 두 가지 모델**
+
+1. 관찰 관점 : 클로저는 함수가 다른 스코프로 전달되거나 호출될 때에도 외부 변수를 기억하는 함수 인스턴스
+2. 구현 관점 : 클로저는 다른 스코프에서 참조가 전달되고 호출되는 동안 함수 인스턴스와 해당 스코프 환경을 제자리에 보존
+
+**클로저를 사용했을 때의 이점**
+
+1. 함수 인스턴스가 매번 계산할 필요 없이 이전에 결정된 정보를 기억해내어 함수의 효율성을 높임
+2. 함수 인스턴스 안에 변수를 캡슐화해 코드 가독성을 개선하고 스코프 노출을 제한하는 동시에 나중에 변수에 있는 정보를 사용할 수 있도록 보장
+3. 함수를 호출할 때마다 정보를 전달할 필요가 없으므로 작게 전문화된 함수 인스턴스는 상호작용하기가 더 쉬워짐
