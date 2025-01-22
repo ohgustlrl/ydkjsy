@@ -3662,23 +3662,27 @@ function setupButtonHandler(btn) {
 
 ### CHAPTER 8. 모듈 패턴
 
-- 모든 프로그래밍에서 가장 중요한 코드 구성 패턴인 **모듈 패턴**을 살펴봄
-- 코드를 제대로 구조화하려면, 특히 변수의 정보를 어디에 저장할지 결정하려면 스코프와 클로저를 이해하고 숙달해야 함
-- 위를 모듈로 구현해 프로그램 구축을 구체적이고 실용적으로 개선하는 방법을 알아봄
+- 전 장에서는 렉시컬 스코프와 클로저를 통해 스코프를 최소 노출시키는 형태를 살펴봄
+- 이번 장에서는 모든 프로그래밍에서 가장 중요한 코드 구성 패턴인 **모듈 패턴**을 살펴봄
+
+- 코드를 제대로 구조화하기 위해서는, 특히나 변수의 정보를 어디에 저장할지 결정하려면 스코프와 클로저를 이해하고 숙달해야 함
+
+- 모듈은 본질적으로 렉시컬 스코프와 클로저를 기반으로 만들어짐
+- 이번장에서는 위를 기반으로 한 모듈을 구현해 프로그램 구축을 구체적이고 실용적으로 개선하는 방법을 알아봄
 
 #### 8.1 캡슐화와 최소 노출의 원칙(POLE)
 
 - 캡슐화는 객체 지향 프로그래밍의 원칙으로 자주 거론됨
 - 캡슐화의 목표 = 정보(데이터)와 동작(함수)을 한데 묶거나 함께 배치해 공통의 목적을 달성하는 것
-- 단순히 공통의 목적을 가진 코드 일부분을 별도의 파일을 옮기는 것만으로도 실현 가능
-  Ex) 검색 결과 목록을 'Search-list.js' 라는 단일 파일로 묶음
-- 모던 프론트엔드 개발에서는 UI 설계 시 컴포넌트를 기본 단위로 하는데 이는 캡슐화의 필요성이 더욱 부각됨
+- 단순히 공통의 목적을 가진 코드 일부분을 별도의 파일로 옮기는 것만으로도 실현 가능
+  Ex) 검색 결과 목록을 만드는 변수나 함수를 'Search-list.js' 라는 단일 파일로 묶음
+- 모던 프론트엔드 개발에서는 UI 설계 시 컴포넌트를 기본 단위로 하는데 이는 캡슐화의 필요성이 더욱 부각됨 (잘 배워두면 좋겠죠?)
 - 캡슐화의 또 다른 주요 목표는 캡슐화된 데이터와 함수의 특정 측면의 가시성을 제어 하는 것
 - JS에서는 주로 렉시컬 스코프 메커니즘을 사용해 가시성 제어라는 목표를 달성함
 - 캡슐화의 주요 아이디어(책 표현은 아이디어 였으나 방법에 가까움)
   1. 비슷한 코드의 그룹화
   2. 공개하고 싶지 않은 세부 사항은 접근을 선택적으로 제한하는 것
-      Ex) private 로 분류되지 않은 부분은 public 으로 표시하고 프로그램 전체에서 접근할 수 있도록 할 것
+      Ex) private(비공개) 로 분류되지 않은 부분은 public(공개) 으로 표시하고 프로그램 전체에서 접근할 수 있도록 할 것
 
 - 공개와 비공개의 경계, 둘의 연결 지점을 찾으면 구축과 유지 보수가 쉬워짐
 - 이런 장점 떄문에 JS에서 모듈을 사용해 코드를 유지 보수 함
@@ -3857,5 +3861,239 @@ fullTime.getName(73); // 보라
 
 **가독성과 코드의 의도를 명확히 하기 위해** 자주 사용되는 스타일이며 관례라고 합니다. (하지만 반드시 이렇게 써야 하는건 아닌 듯)
 자바의 클래스도 변수명은 첫글자가 대문자이고, 자바스크립트가 초창기부터 자바 개발자들을 대상으로 퍼져나갔기에 이런 관례가 생긴게 아닌가 합니다.
-`
+
 #### 8.3 Node.js의 CommonJS 모듈
+
+**클래식 모듈과 CommonJS 모듈의 차이**
+
+1.클래식 모듈                        
+- IIFE 또는 모듈 팩토리 형태로 모듈을 정의 
+- 다른 코드나 또 다른 모듈과 함께 하나의 파일 내에서 묶을 수 있음                 
+
+2. CommonJS 모듈
+- 파일 기반이므로 모듈을 별도의 파일로 정의해야 함 
+
+```javascript
+// 윗 절에서 사용한 코드를 CommonJS 모듈화하기
+module.exports.getName = getName;
+
+var records = [
+    { id: 14, name: "가일", grade: 86 },
+    { id: 73, name: "보라", grade: 87 },
+    { id: 112, name: "지수", grade: 75 },
+    { id: 6, name: "호진", grade: 91 }
+];
+
+function getName(studentID) {
+    var student = records.find(
+        student => student.id == studentID
+    );
+    return student.name;
+}
+```
+- records 와 getName 식별자는 모듈의 최상위 스코프에 존재함
+- 다만 이것이 전역 스코프는 아님 (달리 설명하면 모듈의 최상위 스코프임)
+- getName은 module.exports 의 객체에 등록해 외부에서 접근이 가능하지만
+  records는 모듈의 바깥에서 직접적으로 접근할 수는 없음
+- CommonJS 모듈에서는 module.exports 객체를 사용해 공개 API를 정의하는 형식
+- module.exports는 빈 객체이며 여기에 함수나 변수를 추가하면 모듈 외부에서
+  접근이 가능해짐
+
+**※CommonJS 주의사항**  
+
+※ 레거시 코드에서는 단순히 exports만 사용해 공개 API를 추가하는 경우도 있는데 코드의 명확성을 위해 module. 접두사를 붙이는 것을 권장  
+※ module.exports는 어디든 배치할 수 있지만 일관성을 위해 상단 또는 하단에 배치하는걸 권장
+※ 아래의 형태로 정의하는 것도 주의
+```javascript
+// 여러 개의 공개 API를 위한 새로운 객체로 정의
+module.exports = {
+  // 내보낼 것에 대한 정의
+}
+```
+- 이러한 형태는 모듈이 순환적으로 종속되는 경우 예기치 않은 동작이 발생할 수 있음
+- 혹시라도 여러 개를 동시에 내보내고자 하는 경우 아래와 같이 객체 리터럴 스타일로 정의하는 것을 권장
+
+```javascript
+// 여러 개의 공개 API를 위한 객체 리터럴 정의
+Object.assign(module.exports, {
+  // 내보낼 것에 대한 정의
+})
+```
+**설명**
+1. 공개 API로 내보낼 것은 {} 객체 리터럴에 정의
+2. Object.assign() 메소드를 사용해 얕은 복사로 module.exports에 여러 속성을 한 번에 추가
+
+- 편리함과 안전함 사이의 절묘한 조화와 균형을 이루는 방법^^;ㅋㅋ
+
+- 작업중인 모듈이나 프로그램에 또 다른 모듈 인스터를 추가하는 방법은 require() 메서드를 사용 (윗 절에 클래식 모듈에서는 모듈 팩토리 형태나 IIFE 기반으로 함수를 만들고 새로운 식별자를 선언하고 해당 함수를 할당하는 형태로 인스턴스화 했음)
+
+```javascript
+// NodeJS의 CommonJS 모듈에서 새로운 인스턴스를 만드는 방법
+var Student = require("/path/to/student.js");
+
+Student.getName(73); // 보라
+```
+- Student는 모듈 예시로 작성한 공개API 인 getName()를 참조함
+- CommonJS 모듈은 앞서 살펴본 IIFE 모듈 정의 방식과 유사하게 싱글턴 인스턴스처럼 작동함
+- require() 메서드를 사용하면 지정된 모듈 파을의 전체 공개 API가 불러와 짐  
+  일부만 필요한 경우 다음과 같이 할 수 있음
+
+```javascript
+var getName = require("/path/to/student.js").getName;
+
+// 또는 다음과 같이 모듈의 일부를 가져옴
+
+var { getName } = require("/path/to/student.js") // 구조분해할당
+```
+
+**중요** - 공개적으로 내보내진 메서드는 내부 모듈 세부 사항에 대한 클로저를 유지함, 프로그램이 살아 있는 동안 모듈 싱글턴의 상태가 유지됨
+
+#### 8.4 최신 ES 모듈
+
+1. ES 모듈과 CommonJS의 공통점
+ - 파일 기반
+ - 모듈 인스턴스는 싱글턴
+ - 모든 것은 기본적으로 비공개
+
+2. ES 모듈과 CommonJS 모듈의 차이
+ - ES 모듈은 파일 상단에 전처리 구문 use Strict가 없어도 엄격 모드로 실행됨
+ - export 키워드를 사용해 모듈의 공개 API를 정의
+ - require() 메서드 대신 import 키워드를 사용함
+
+```javascript
+// CommonJS 모듈을 => ES 모듈로 변경
+export { getName };
+
+var records = [
+    { id: 14, name: "가일", grade: 86 },
+    { id: 73, name: "보라", grade: 87 },
+    { id: 112, name: "지수", grade: 75 },
+    { id: 6, name: "호진", grade: 91 }
+];
+
+function getName(studentID) {
+    var student = records.find(
+        student => student.id == studentID
+    );
+    return student.name;
+}
+```
+- module.exports 가 export 로만 변경됨 
+- CommonJS와 마찬가지로 export는 파일 어디에서나 사용할 순 있지만 최상위 스코프에 있어야 함, 다른 블럭이나 함수 안에 있으면 안됨
+
+**책에는 나오지 않는 부분 보강자료**
+
+```javascript
+// CommonJS module
+if (someCondition) {
+    module.exports = { foo: 'bar' };
+} else {
+    module.exports = { baz: 'qux' };
+}
+
+//Es module
+if (someCondition) {
+    export const foo = 'bar'; // SyntaxError: Unexpected token 'export'
+}
+
+```
+
+- 위 코드처럼 CommonJS에서는 module.exports를 어디에서나 정의할 수 있으며, 실행 시점에서 동적으로 값을 변경할 수 있음
+
+- 반면 export는 컴파일 단계에서 분석되므로 동적으로 값을 변경하거나 조건문 내부에서 사용하면 오류가 발생함
+
+- ES 모듈은 정적 분석 기반으로 동작하며, 동작은 코드 실행 전에 결정됨
+
+**ES 모듈의 다양한 export 문 지정 방법**
+
+1번 예시
+```javascript
+export function getName(studentID) {
+  // ...
+}
+```
+- 함수선언 앞에 export 키워드가 있지만 getName은 함수 호이스팅 규칙을 적용받기 때문에 모듈 전체 스코프에서 사용 가능
+
+2번 예시
+```javascript
+export default function getName(studentID) {
+  // ...
+}
+```
+- default 키워드를 붙인 형태인 "기본 내보내기" 방식
+- 일반적인 내보내기 방식과는 동작이 다름
+- 내보낼 API 객체에 멤버 변수(내보내기 할 대상)가 하나 있는 경우 "기본 내보내기"를 하면 간단한 문법으로 해당 모듈을 import할 수 있음(뒤에서 예시가 나옴)  
+(관련된 다양한 예제 https://ko.javascript.info/import-export)
+- default 가 붙지 않은 내보내기는 "기명 내보내기" 라고 부름
+
+**ES모듈의 import 키워드**
+- import 키워드도 모듈 최상위 레벨에서만 사용해야 하며 블럭과 함수 내에 있으면 안됨
+
+**import 키워드의 다양한 사용방법**
+1. 기명 가져오기
+```javascript
+import { getName } from "/path/to/student.js";
+
+getName(73); // 보라
+```
+- 이 방법은 모듈에서 명시적으로 이름을 지정한 공개 API 멤버만 가져오고(이름이 지정되지 않은 멤버는 건너뜀) 해당 식별자를 현재 모듈의 최상위 스코프에 추가
+- {} 안에 쉼표를 사용하면 여러 API 멤버를 나열할 수도 있음
+
+2. as 키워드를 사용한 방법
+```javascript
+import { getName as getStudentName } from "path/to/student.js"
+
+getStudentName(73); //보라
+```
+
+3. 기본내보내기 가져오기
+```javascript
+import getName from "path/to/student.js"
+
+getName(73); //보라
+```
+- 중괄호 안써도 됨
+
+4. 기본내보내기와 기명내보내기 멤버를 같이 가져오기
+```javascript
+import { default as getName, /* 기명 멤버1, 기명 멤버2, */ } from "path/to/student.js"
+
+getName(73); // 보라
+```
+
+5.네임스페이스 가져오기
+```javascript
+import * as Student from "path/to/student.js";
+Student.getName(73); //보라
+```
+- *를 사용하면 API로 내보낸 모든 멤버(기본, 기명)를 가져와 지정된 단일 네임 스페이스 식별자 아래에 저장할 수 있음
+
+#### 8.5 정리
+
+**각 모듈 패턴의 사용처**
+- 클래식 모듈 = 브라우저, NodeJS
+- CommonJS 모듈 = NodeJS
+- ES 모듈 = 브라우저, NodeJS
+
+※ 사용에 관계없이 모듈은 프로그램의 기능과 데이터를 구조화하고 정리하는데 가장 효과적임
+
+- 렉시컬 스코프 규칙, 변수와 함수를 적절한 위치에 배치하는 방법은 모듈 패턴을 효율적으로 사용하는 데 있어 중요하다는 것을 알아야 함
+
+- POLE은 항상 취해야 하는 기본 자세, 과도한 노출을 피하고 필요한 최소한의 부분만 공개 API에 노출해 상호작용하는데 힘써야 함
+
+- 클로저는 렉시컬 스코프 시스템을 활용해 모듈 상태를 유지하는 역할을 함, 따라서 렉시컬 스코프와 클로저도 알아야 함;;
+
+> Chapter8 문제
+>
+> <details>
+>  <summary>Q1. 다음 중 ES 모듈과 CommonJS 모듈의 차이에 대한 설명으로 옳지 않은 것은? <br/><br/>
+> 1. ES 모듈은 export 키워드를 사용하고, CommonJS는 module.exports를 사용한다.<br/>
+> 2. ES 모듈은 모듈 최상위 스코프에서만 export와 import를 사용할 수 있다.<br/>
+> 3. CommonJS 모듈은 파일 단위로 정의해야 하며, ES 모듈은 함수 단위로 정의된다.<br/>
+> 4. ES 모듈은 브라우저와 Node.js에서 모두 지원되지만 CommonJS는 Node.js에서 주로 사용된다.<br/>
+> </summary>
+> <br/>
+>  <p>A1. 3번 => CommonJS와 ES 모듈 모두 파일 단위로 정의됨  <br/> </p>
+> </details>
+> </details>
+> <br/>
