@@ -115,6 +115,20 @@
       - [8.2.2 데이터 구조(상태 유지 그룹화)](#822-데이터-구조상태-유지-그룹화)
       - [8.2.3 모듈(상태를 가진 접근 제어)](#823-모듈상태를-가진-접근-제어)
       - [8.3 Node.js의 CommonJS 모듈](#83-nodejs의-commonjs-모듈)
+      - [8.4 최신 ES 모듈](#84-최신-es-모듈)
+      - [8.5 정리](#85-정리)
+  - [부록 APPENDIX A 한 걸음 더](#부록-appendix-a-한-걸음-더)
+    - [A.1 암시적 스코프](#a1-암시적-스코프)
+      - [A.1.1 매개변수 스코프](#a11-매개변수-스코프)
+      - [A.1.2 함수 이름 스코프](#a12-함수-이름-스코프)
+    - [A.2 익명함수 vs 기명함수](#a2-익명함수-vs-기명함수)
+      - [A.2.1 명시적 혹은 추론된 이름](#a21-명시적-혹은-추론된-이름)
+      - [A.2.2 이름이 없다면?](#a22-이름이-없다면)
+      - [A.2.3 나는 누구일까요?](#a23-나는-누구일까요)
+      - [A.2.4 이름은 설명입니다](#a24-이름은-설명입니다)
+      - [A.2.5 화살표 함수](#a25-화살표-함수)
+      - [A.2.6 IIFE 변형](#a26-iife-변형)
+      - [!! A.2 정리](#-a2-정리)
 
 ## Part 1
 
@@ -3680,18 +3694,20 @@ function setupButtonHandler(btn) {
 - 캡슐화의 또 다른 주요 목표는 캡슐화된 데이터와 함수의 특정 측면의 가시성을 제어 하는 것
 - JS에서는 주로 렉시컬 스코프 메커니즘을 사용해 가시성 제어라는 목표를 달성함
 - 캡슐화의 주요 아이디어(책 표현은 아이디어 였으나 방법에 가까움)
+
   1. 비슷한 코드의 그룹화
   2. 공개하고 싶지 않은 세부 사항은 접근을 선택적으로 제한하는 것
-      Ex) private(비공개) 로 분류되지 않은 부분은 public(공개) 으로 표시하고 프로그램 전체에서 접근할 수 있도록 할 것
+     Ex) private(비공개) 로 분류되지 않은 부분은 public(공개) 으로 표시하고 프로그램 전체에서 접근할 수 있도록 할 것
 
 - 공개와 비공개의 경계, 둘의 연결 지점을 찾으면 구축과 유지 보수가 쉬워짐
 - 이런 장점 떄문에 JS에서 모듈을 사용해 코드를 유지 보수 함
 
 위와 관련한 내용은 뒤에서 더 자세히 알아봄
-  
+
 #### 8.2 모듈이란?
 
 - 모듈이란 ? 관련된 데이터와 함수(문맥상 메서드)의 모음
+
 * 모듈의 구분
   1. 숨겨진 비공개 세부 정보
   2. 공개적으로 접근 가능한 세부 정보 (공개 API 라고 함)
@@ -3704,6 +3720,7 @@ function setupButtonHandler(btn) {
 
 - 캡슐화는 윗 절에서 알아봤듯이 데이터(상태)가 포함되어야 함, 단순히 함수(메서드)를 묶는 것은 모듈에서의 캡슐화가 아님
 - 이러한 상태가 없이(무상태) 함수를 모아놓은 것은 **네임스페이스** 라고 부름
+
 ```javascript
 // 모듈이 아닌 네임스페이스
 var Utils = {
@@ -3719,14 +3736,15 @@ var Utils = {
   },
   isValidEmail(email) {
     return /[^@]+@[^@.]+\.[^@.]+/.test(email);
-  }
+  },
 };
-
 ```
+
 - 일반적으로 기능을 한데 모으는 것은 모범 사례이지만 그렇다고 해서 모듈이 되는 것은 아님
 - 위와 같은 형태는 함수를 체계화한 네임스페이스 임
 
 #### 8.2.2 데이터 구조(상태 유지 그룹화)
+
 - 윗 절에서 데이터 상태가 없는 경우 캡슐화가 아니다 라고 함
 - 그러나 데이터와 상태를 가진 함수를 하나로 묶는다 하더라도 데이터의 가시성이 제한되지 않으면 POLE 관점에서 캡슐화가 아님
 
@@ -3734,22 +3752,21 @@ var Utils = {
 // 모듈이 아닌 데이터 구조
 var Student = {
   records: [
-    { id: 14, name: "카일", grade: 86 },
-    { id: 73, name: "보라", grade: 87 },
-    { id: 112, name: "지수", grade: 75 },
-    { id: 6, name: "호진", grade: 91 }
+    { id: 14, name: '카일', grade: 86 },
+    { id: 73, name: '보라', grade: 87 },
+    { id: 112, name: '지수', grade: 75 },
+    { id: 6, name: '호진', grade: 91 },
   ],
   getName(studentID) {
-    var student = this.records.find(
-      student => student.id == studentID
-    );
+    var student = this.records.find((student) => student.id == studentID);
     return student.name;
-  }
+  },
 };
 
 Student.getName(73);
 // 보라
 ```
+
 - 8.1 캡슐화의 주요 아이디어의 2번을 참조하면 공개하고 싶지 않은 세부 사항은 접근을 선택적으로 제한하는 것  
   이라고 했었는데 예제에서 records 는 공개적으로 접근할 수 있음,
   또한 공개 API를 통해서만 접근할 수 있는 것도 아님 따라서 student는 모듈이 아님
@@ -3770,29 +3787,28 @@ Student.getName(73);
 ```javascript
 var Student = (function defineStudent() {
   var records = [
-    { id: 14, name: "카일", grade: 86 },
-    { id: 73, name: "보라", grade: 87 },
-    { id: 112, name: "지수", grade: 75 },
-    { id: 6, name: "호진", grade: 91 }
+    { id: 14, name: '카일', grade: 86 },
+    { id: 73, name: '보라', grade: 87 },
+    { id: 112, name: '지수', grade: 75 },
+    { id: 6, name: '호진', grade: 91 },
   ];
 
   var publicAPI = {
-    getName
+    getName,
   };
 
   return publicAPI;
 
   // **********************
   function getName(studentID) {
-    var student = records.find(
-      student => student.id == studentID
-    );
+    var student = records.find((student) => student.id == studentID);
     return student.name;
   }
 })();
 
 Student.getName(73); // 보라
 ```
+
 ▼ 위 코드의 student 변수를 콘솔로그에 찍어보았음!
 ![student 를 콘솔로그로 찍은 캡처 이미지](./revealing%20module%20console%20log.png)
 
@@ -3801,12 +3817,14 @@ Student.getName(73); // 보라
 - 외부에서는 이 API를 통해야 getName() 메서드에 접근할 수 있음
 
 **클래식 모듈의 코드 작동 방식**
+
 1. 모듈 인스턴스는 defineStudent() 라는 함수가 IIFE(즉시 실행 함수)가 실행되면서 생성
 2. IIFE는 내부 함수 getName() 메서드를 참조하는 프로퍼티를 가진 publicAPI 객체를 반환
 3. 모듈 인스턴스 외부에 있는 Student.getName()은 공개API를 통해 노출된 내부 함수를 호출
 4. 클로저를 통해 내부 변수 records 에 접근
-   
+
 ※ 클래식 모듈 패턴에서는 함수가 프로퍼티인 객체를 반환할 필요가 없으며 함수를 직접 반환하면 됨
+
 - 이로써 클래식 모듈의 핵심 요소는 모두 충족됨 (1. 데이터-상태-, 2. 가시성 접근 제어어)
 - 렉시컬 스코프는 함수가 정의된 시점의 변수 접근 규칙을 결정함
 - 이 규칙에 따라 함수 내에 정의된 변수와 함수들은 외부 스코프에서 접근할 수 없게 돼 비공개 변수 및 함수가 됨
@@ -3815,29 +3833,28 @@ Student.getName(73); // 보라
 - 이때 단일 인스턴스를 **싱클턴(singleton)** 이라고 부름
 
 **모듈 팩토리(다중 인스턴스)**
+
 - 싱클턴은 단일 인스턴스만 사용하는데, 만약 다중 인스턴스를 지원하는 모듈을 정의하고 싶다면 코드를 약간만 조정하면 됨
 
 ```javascript
 // 싱글턴을 만드는 IIFE가 아닌 팩토리 함수
 function defineStudent() {
   var records = [
-    { id: 14, name: "카일", grade: 86 },
-    { id: 73, name: "보라", grade: 87 },
-    { id: 112, name: "지수", grade: 75 },
-    { id: 6, name: "호진", grade: 91 }
+    { id: 14, name: '카일', grade: 86 },
+    { id: 73, name: '보라', grade: 87 },
+    { id: 112, name: '지수', grade: 75 },
+    { id: 6, name: '호진', grade: 91 },
   ];
 
   var publicAPI = {
-    getName
+    getName,
   };
 
   return publicAPI;
 
   // **********************
   function getName(studentID) {
-    var student = records.find(
-      student => student.id == studentID
-    );
+    var student = records.find((student) => student.id == studentID);
     return student.name;
   }
 }
@@ -3845,12 +3862,14 @@ function defineStudent() {
 var fullTime = defineStudent();
 fullTime.getName(73); // 보라
 ```
+
 - 이전 코드와는 달리 IIFE로 정의하지 않고 일반적인 독립형(standalone) 함수로 정의함
 - 이를 모듈 팩토리 함수라고 함
 - 모듈 팩토리 함수 외부에서 fullTime 변수에 모듈 팩토리 함수를 인스턴스화 하여 모듈 인스턴스를 생성 함
 - 각 모듈 인스턴스는 자체 내부 스코프와 클로저를 형성, 이 클로저 때문에 getName() 함수는 records를 감싸고 접근할 수 있음
 
 **클래식 모듈 정리**
+
 1. 적어도 한 번 이상 실행되는 모듈 팩토리 함수가 외부 스코프에 존재해야 함
 2. 모듈의 내부 스코프에는 해당 모듈의 상태를 나타내는 정보가 최소한 하나 이상 있어야 하며, 이는 외부에서 접근할 수 없어야 함
 3. 모듈은 하나 이상의 함수를 공개 API로 반환해야 함. 이 함수는 내부 스코프의 숨겨진 상태를 클로저를 통해 보존, 관리 함
@@ -3866,31 +3885,32 @@ fullTime.getName(73); // 보라
 
 **클래식 모듈과 CommonJS 모듈의 차이**
 
-1.클래식 모듈                        
-- IIFE 또는 모듈 팩토리 형태로 모듈을 정의 
-- 다른 코드나 또 다른 모듈과 함께 하나의 파일 내에서 묶을 수 있음                 
+1.클래식 모듈
+
+- IIFE 또는 모듈 팩토리 형태로 모듈을 정의
+- 다른 코드나 또 다른 모듈과 함께 하나의 파일 내에서 묶을 수 있음
 
 2. CommonJS 모듈
-- 파일 기반이므로 모듈을 별도의 파일로 정의해야 함 
+
+- 파일 기반이므로 모듈을 별도의 파일로 정의해야 함
 
 ```javascript
 // 윗 절에서 사용한 코드를 CommonJS 모듈화하기
 module.exports.getName = getName;
 
 var records = [
-    { id: 14, name: "가일", grade: 86 },
-    { id: 73, name: "보라", grade: 87 },
-    { id: 112, name: "지수", grade: 75 },
-    { id: 6, name: "호진", grade: 91 }
+  { id: 14, name: '가일', grade: 86 },
+  { id: 73, name: '보라', grade: 87 },
+  { id: 112, name: '지수', grade: 75 },
+  { id: 6, name: '호진', grade: 91 },
 ];
 
 function getName(studentID) {
-    var student = records.find(
-        student => student.id == studentID
-    );
-    return student.name;
+  var student = records.find((student) => student.id == studentID);
+  return student.name;
 }
 ```
+
 - records 와 getName 식별자는 모듈의 최상위 스코프에 존재함
 - 다만 이것이 전역 스코프는 아님 (달리 설명하면 모듈의 최상위 스코프임)
 - getName은 module.exports 의 객체에 등록해 외부에서 접근이 가능하지만
@@ -3899,17 +3919,19 @@ function getName(studentID) {
 - module.exports는 빈 객체이며 여기에 함수나 변수를 추가하면 모듈 외부에서
   접근이 가능해짐
 
-**※CommonJS 주의사항**  
+**※CommonJS 주의사항**
 
 ※ 레거시 코드에서는 단순히 exports만 사용해 공개 API를 추가하는 경우도 있는데 코드의 명확성을 위해 module. 접두사를 붙이는 것을 권장  
 ※ module.exports는 어디든 배치할 수 있지만 일관성을 위해 상단 또는 하단에 배치하는걸 권장
 ※ 아래의 형태로 정의하는 것도 주의
+
 ```javascript
 // 여러 개의 공개 API를 위한 새로운 객체로 정의
 module.exports = {
   // 내보낼 것에 대한 정의
-}
+};
 ```
+
 - 이러한 형태는 모듈이 순환적으로 종속되는 경우 예기치 않은 동작이 발생할 수 있음
 - 혹시라도 여러 개를 동시에 내보내고자 하는 경우 아래와 같이 객체 리터럴 스타일로 정의하는 것을 권장
 
@@ -3917,9 +3939,11 @@ module.exports = {
 // 여러 개의 공개 API를 위한 객체 리터럴 정의
 Object.assign(module.exports, {
   // 내보낼 것에 대한 정의
-})
+});
 ```
+
 **설명**
+
 1. 공개 API로 내보낼 것은 {} 객체 리터럴에 정의
 2. Object.assign() 메소드를 사용해 얕은 복사로 module.exports에 여러 속성을 한 번에 추가
 
@@ -3929,21 +3953,22 @@ Object.assign(module.exports, {
 
 ```javascript
 // NodeJS의 CommonJS 모듈에서 새로운 인스턴스를 만드는 방법
-var Student = require("/path/to/student.js");
+var Student = require('/path/to/student.js');
 
 Student.getName(73); // 보라
 ```
+
 - Student는 모듈 예시로 작성한 공개API 인 getName()를 참조함
 - CommonJS 모듈은 앞서 살펴본 IIFE 모듈 정의 방식과 유사하게 싱글턴 인스턴스처럼 작동함
 - require() 메서드를 사용하면 지정된 모듈 파을의 전체 공개 API가 불러와 짐  
   일부만 필요한 경우 다음과 같이 할 수 있음
 
 ```javascript
-var getName = require("/path/to/student.js").getName;
+var getName = require('/path/to/student.js').getName;
 
 // 또는 다음과 같이 모듈의 일부를 가져옴
 
-var { getName } = require("/path/to/student.js") // 구조분해할당
+var { getName } = require('/path/to/student.js'); // 구조분해할당
 ```
 
 **중요** - 공개적으로 내보내진 메서드는 내부 모듈 세부 사항에 대한 클로저를 유지함, 프로그램이 살아 있는 동안 모듈 싱글턴의 상태가 유지됨
@@ -3951,34 +3976,35 @@ var { getName } = require("/path/to/student.js") // 구조분해할당
 #### 8.4 최신 ES 모듈
 
 1. ES 모듈과 CommonJS의 공통점
- - 파일 기반
- - 모듈 인스턴스는 싱글턴
- - 모든 것은 기본적으로 비공개
+
+- 파일 기반
+- 모듈 인스턴스는 싱글턴
+- 모든 것은 기본적으로 비공개
 
 2. ES 모듈과 CommonJS 모듈의 차이
- - ES 모듈은 파일 상단에 전처리 구문 use Strict가 없어도 엄격 모드로 실행됨
- - export 키워드를 사용해 모듈의 공개 API를 정의
- - require() 메서드 대신 import 키워드를 사용함
+
+- ES 모듈은 파일 상단에 전처리 구문 use Strict가 없어도 엄격 모드로 실행됨
+- export 키워드를 사용해 모듈의 공개 API를 정의
+- require() 메서드 대신 import 키워드를 사용함
 
 ```javascript
 // CommonJS 모듈을 => ES 모듈로 변경
 export { getName };
 
 var records = [
-    { id: 14, name: "가일", grade: 86 },
-    { id: 73, name: "보라", grade: 87 },
-    { id: 112, name: "지수", grade: 75 },
-    { id: 6, name: "호진", grade: 91 }
+  { id: 14, name: '가일', grade: 86 },
+  { id: 73, name: '보라', grade: 87 },
+  { id: 112, name: '지수', grade: 75 },
+  { id: 6, name: '호진', grade: 91 },
 ];
 
 function getName(studentID) {
-    var student = records.find(
-        student => student.id == studentID
-    );
-    return student.name;
+  var student = records.find((student) => student.id == studentID);
+  return student.name;
 }
 ```
-- module.exports 가 export 로만 변경됨 
+
+- module.exports 가 export 로만 변경됨
 - CommonJS와 마찬가지로 export는 파일 어디에서나 사용할 순 있지만 최상위 스코프에 있어야 함, 다른 블럭이나 함수 안에 있으면 안됨
 
 **책에는 나오지 않는 부분 보강자료**
@@ -3986,16 +4012,15 @@ function getName(studentID) {
 ```javascript
 // CommonJS module
 if (someCondition) {
-    module.exports = { foo: 'bar' };
+  module.exports = { foo: 'bar' };
 } else {
-    module.exports = { baz: 'qux' };
+  module.exports = { baz: 'qux' };
 }
 
 //Es module
 if (someCondition) {
-    export const foo = 'bar'; // SyntaxError: Unexpected token 'export'
+  export const foo = 'bar'; // SyntaxError: Unexpected token 'export'
 }
-
 ```
 
 - 위 코드처럼 CommonJS에서는 module.exports를 어디에서나 정의할 수 있으며, 실행 시점에서 동적으로 값을 변경할 수 있음
@@ -4007,70 +4032,87 @@ if (someCondition) {
 **ES 모듈의 다양한 export 문 지정 방법**
 
 1번 예시
+
 ```javascript
 export function getName(studentID) {
   // ...
 }
 ```
+
 - 함수선언 앞에 export 키워드가 있지만 getName은 함수 호이스팅 규칙을 적용받기 때문에 모듈 전체 스코프에서 사용 가능
 
 2번 예시
+
 ```javascript
 export default function getName(studentID) {
   // ...
 }
 ```
+
 - default 키워드를 붙인 형태인 "기본 내보내기" 방식
 - 일반적인 내보내기 방식과는 동작이 다름
 - 내보낼 API 객체에 멤버 변수(내보내기 할 대상)가 하나 있는 경우 "기본 내보내기"를 하면 간단한 문법으로 해당 모듈을 import할 수 있음(뒤에서 예시가 나옴)  
-(관련된 다양한 예제 https://ko.javascript.info/import-export)
+  (관련된 다양한 예제 https://ko.javascript.info/import-export)
 - default 가 붙지 않은 내보내기는 "기명 내보내기" 라고 부름
 
 **ES모듈의 import 키워드**
+
 - import 키워드도 모듈 최상위 레벨에서만 사용해야 하며 블럭과 함수 내에 있으면 안됨
 
 **import 키워드의 다양한 사용방법**
+
 1. 기명 가져오기
+
 ```javascript
-import { getName } from "/path/to/student.js";
+import { getName } from '/path/to/student.js';
 
 getName(73); // 보라
 ```
+
 - 이 방법은 모듈에서 명시적으로 이름을 지정한 공개 API 멤버만 가져오고(이름이 지정되지 않은 멤버는 건너뜀) 해당 식별자를 현재 모듈의 최상위 스코프에 추가
 - {} 안에 쉼표를 사용하면 여러 API 멤버를 나열할 수도 있음
 
 2. as 키워드를 사용한 방법
+
 ```javascript
-import { getName as getStudentName } from "path/to/student.js"
+import { getName as getStudentName } from 'path/to/student.js';
 
 getStudentName(73); //보라
 ```
 
 3. 기본내보내기 가져오기
+
 ```javascript
-import getName from "path/to/student.js"
+import getName from 'path/to/student.js';
 
 getName(73); //보라
 ```
+
 - 중괄호 안써도 됨
 
 4. 기본내보내기와 기명내보내기 멤버를 같이 가져오기
+
 ```javascript
-import { default as getName, /* 기명 멤버1, 기명 멤버2, */ } from "path/to/student.js"
+import {
+  default as getName /* 기명 멤버1, 기명 멤버2, */,
+} from 'path/to/student.js';
 
 getName(73); // 보라
 ```
 
 5.네임스페이스 가져오기
+
 ```javascript
-import * as Student from "path/to/student.js";
+import * as Student from 'path/to/student.js';
 Student.getName(73); //보라
 ```
-- *를 사용하면 API로 내보낸 모든 멤버(기본, 기명)를 가져와 지정된 단일 네임 스페이스 식별자 아래에 저장할 수 있음
+
+- \*를 사용하면 API로 내보낸 모든 멤버(기본, 기명)를 가져와 지정된 단일 네임 스페이스 식별자 아래에 저장할 수 있음
 
 #### 8.5 정리
 
 **각 모듈 패턴의 사용처**
+
 - 클래식 모듈 = 브라우저, NodeJS
 - CommonJS 모듈 = NodeJS
 - ES 모듈 = 브라우저, NodeJS
@@ -4099,6 +4141,7 @@ Student.getName(73); //보라
 > <br/>
 
 ## 부록 APPENDIX A 한 걸음 더
+
 ### A.1 암시적 스코프
 
 - 스코프는 간혹 명확한 위치에 생성됨, 이를 암시적 스코프라고 함
@@ -4106,6 +4149,7 @@ Student.getName(73); //보라
 - 하지만 이런 암시적 스코프는 알고 있으면 유용하며 다음과 같은 암시적 스코프에 대해 알아봄
 
 ◎ 암시적 스코프의 종류
+
 1. 매개변수 스코프
 2. 함수명 스코프
 
@@ -4117,35 +4161,38 @@ Student.getName(73); //보라
 // 외부/전역 스코프: 빨간색 버블 1
 
 function getStudentName(studentID) {
-    // 함수 스코프: 파란색 버블 2
-
-    // ...
+  // 함수 스코프: 파란색 버블 2
+  // ...
 }
 ```
+
 - 위 예제는 studentID가 단순한 매개변수 이므로 파란색 버블 2의 함수 스코프로 작동함
 - 이와 반대로 단순하지 않은 매개변수는 작동방식이 다름
 
-◎ 단순하지 않은 매개변수의 대표적 예 
+◎ 단순하지 않은 매개변수의 대표적 예
+
 1. 기본값이 있는 매개변수
 2. ...를 사용하는 나머지 매개변수  
-// 지난번엔 ... <- 이걸 전개연산자라고 했던 기억이 나는데 이제보니 나머지 매개변수(Rest Parameter) 라고 해서 다르다는 사실을 이번에 깨달음
-※ 나머지 매개변수는 여러가지 매개변수가 들어왔을 때 매개변수를 하나의 배열로 묶어줌
+   // 지난번엔 ... <- 이걸 전개연산자라고 했던 기억이 나는데 이제보니 나머지 매개변수(Rest Parameter) 라고 해서 다르다는 사실을 이번에 깨달음
+   ※ 나머지 매개변수는 여러가지 매개변수가 들어왔을 때 매개변수를 하나의 배열로 묶어줌
 3. 비구조화 매개변수
 
 ▣ 기본값이 있는 매개변수의 예제
+
 ```javascript
 // 외부/전역 스코프: 빨간색 버블 1
 
-function getStudentName( /* 파란색 버블 2 */ studentID = 0) {
-    // 함수 스코프: 초록색 버블 3
-
-    // ...
+function getStudentName(/* 파란색 버블 2 */ studentID = 0) {
+  // 함수 스코프: 초록색 버블 3
+  // ...
 }
 ```
+
 - 단순하지 않은 매개변수를 사용하게 되면 매개변수 목록이 자체 스코프를 형성
 - 함수의 스코프는 매개변수 목록 스코프에 중첩됨
 
 ??? 차이 발생의 이유 ???
+
 - 단순하지 않은 매개변수 형태는 다양한 예외 케이스를 발생 시킴
 - 이러한 케이스를 효과적으로 처리하기 위해 자체 스코프를 형성함
 
@@ -4153,64 +4200,68 @@ function getStudentName( /* 파란색 버블 2 */ studentID = 0) {
 
 ```javascript
 function getStudentName(studentID = maxID, maxID) {
-    // ...
+  // ...
 }
 ```
+
 - 좌에서 우로 연산이 수행된다고 가정할 때, maxID는 TDZ 오류 발생시킴
 - 이유는 maxID가 매개변수 스코프에 선언되어 있지만 매개변수 순서 때문에 아직 초가화되지 않았기 때문
 
 ▣ 아래와 같이 변경하면 정상작동함
+
 ```javascript
 function getStudentName(maxID, studentID = maxID) {
-    // ...
+  // ...
 }
 ```
+
 - 기본 매개변수 위치에 함수 표현식이 있는 경우 상황이 더 복잡해짐
 - 이 경우 새롭게 생성된 매개변수 스코프에 매개변수 자체에 대한 클로저가 생성될 수 있음
 
-
 ▣ 매개변수 위치에 함수표현식이 있는 예제
+
 ```javascript
 function whatsTheDealHere(id, defaultID = () => id) {
-    id = 5;
-    console.log(defaultID());
+  id = 5;
+  console.log(defaultID());
 }
 
 whatsTheDealHere(3);
 // 5
-
 ```
+
 - 화살표 함수인 defaultID()가 id 매개변수와 변수를 감싸고 5가 재할당되므로 해당 코드는 현재 정상
 
 ▣ 매개변수 위치에 함수 표현식이 있고 여기에 섀도잉 정의를 도입한 예제
 
 ```javascript
 function whatsTheDealHere(id, defaultID = () => id) {
-    var id = 5;
-    console.log(defaultID());
+  var id = 5;
+  console.log(defaultID());
 }
 
 whatsTheDealHere(3);
 // 3
-
 ```
+
 - var id = 5는 id 매개변수를 섀도잉 함
 - id는 지역 변수를 가리키지만 defaultID() 함수의 클로저는 매개변수 id에 대한 참조를 유지하는 중 이므로 3이 출력 됨
 - 이를 통해 매개변수 목록이 자체 스코프를 형성한다는 증명이 됨
 
 ▣ 더 복잡한 예제
+
 ```javascript
 function whatsTheDealHere(id, defaultID = () => id) {
-    var id;
+  var id;
 
-    console.log(`지역 변수 'id': ${id}`);
-    console.log(`매개변수 'id' (클로저): ${defaultID()}`);
+  console.log(`지역 변수 'id': ${id}`);
+  console.log(`매개변수 'id' (클로저): ${defaultID()}`);
 
-    console.log(`'id'에 5를 재할당`);
-    id = 5;
+  console.log(`'id'에 5를 재할당`);
+  id = 5;
 
-    console.log(`지역 변수 'id': ${id}`);
-    console.log(`매개변수 'id' (클로저): ${defaultID()}`);
+  console.log(`지역 변수 'id': ${id}`);
+  console.log(`매개변수 'id' (클로저): ${defaultID()}`);
 }
 
 whatsTheDealHere(3);
@@ -4221,22 +4272,265 @@ whatsTheDealHere(3);
 // 지역 변수 'id': 5
 // 매개변수 'id' (클로저): 3
 ```
+
 - 일반적으로 var로 선언한 변수는 5장의 주장처럼 스코프 최상단에서 undefined로 초기화 되어야 하지만 위 예제에선 3이 출력됨
 - 이는 레거시 코드와의 호환 문제로 JS는 이렇게 함수에 매개변수와 이름이 같은 지역 변수가 있는 경우 id를 undefined로 초기화 하지 않고 매개변수 id를 매개변숫값으로 초기화 해버림
 - 두 개의 id는 여전히 별개이며, 서로 다른 스코프에 있음, 나중에 id에 5를 할당하여 명확히 관찰할 수 있음
 
 ※ 이런 결과를 피하기 위한 조언 2가지
+
 1. 지역 변수로 매개변수를 섀도잉하지 말 것
 2. 기본 매개변수에서는 다른 매개변수를 참조하지 말 것
 
 #### A.1.2 함수 이름 스코프
+
 - 3.3절 '함수 이름 스코프' 에서는 함수 자체의 스코프에 함수 표현식의 이름이 추가된다고 설명함
 
 ▣ 예제
+
 ```javascript
 var askQuestion = function ofTheTeacher() {
   //...
-}
+};
 ```
+
 - ofTheTeacher가 askQuestion이 선언된 외부 스코프에 추가되지 않지만 단순히 함수 내부 스코프에 추가되는 것도 아님
 - 이 경우도 암시 스코프의 또 다른 예외 케이스를 만듦
+- 함수 표현식의 이름 식별자는 자체적인 암시적 스코프에 있음
+- 이 스코프는 외부를 감싸는 스코프와 메인 내부함수 스코프 사이에 중첩되 있음
+- 만약 ofTheTeacher가 함수 스코프에 있었다면 아래 예시에서 에러가 발생함
+
+```javascript
+var askQuestion = function ofTheTeacher() {
+  // 하지만 중복 선언 오류는 발생하지 않습니다.
+  let ofTheTeacher = '아직 혼란스럽나요?';
+};
+```
+
+- let 선언 방식은 재선언이 불가능한데, 동일한 두 개의 ofTheTeacher 식별자가 서로 다른 스코프에 있기 때문에 이는 재선언이 섀도잉 처리 됨
+
+※ 예상치못한 결과를 피하려면!
+
+- 함수 표현식의 이름과 동일한 변수를 함수 본문 내에서 let으로 선언하지 않기
+
+### A.2 익명함수 vs 기명함수
+
+#### A.2.1 명시적 혹은 추론된 이름
+
+- 모든 함수에는 목적이 있고, 그에 부합하는 이름이 있을 것임
+- 하지만 항상 코드에 이름을 붙여야 하는가?
+- 그렇다면 왜 이름을 붙여야 하는가?
+
+※ 스택 트레이스에 anonymous가 표시되면 디버깅에 도움이 되지 않기 떄문에.
+
+```javascript
+// 익명 함수 일 때
+btn.addEventListener('click', function () {
+  setTimeout(function () {
+    ['a', 42].map(function (v) {
+      console.log(v.toUpperCase());
+    });
+  }, 100);
+});
+
+// Uncaught TypeError: v.toUpperCase is not a function
+// at myProgram.js: 4
+// at Array.map (<anonymous>)
+// at myProgram.js: 3
+
+//--------------------------------------------------------//
+
+// 기명 함수 일 때
+btn.addEventListener('click', function onClick() {
+  setTimeout(function waitAMoment() {
+    ['a', 42].map(function allUpper(v) {
+      console.log(v.toUpperCase());
+    });
+  }, 100);
+});
+
+// Uncaught TypeError: v.toUpperCase is not a function
+// at allUpper (myProgram.js: 4)
+// at Array.map (<anonymous>)
+// at waitAMoment (myProgram.js: 3)
+```
+
+- 디버깅 시 어느 함수에서 에러가 발생했는지 조금 더 명시적으로 확인할 수 있음
+
+▣ 기명함수가 아닌 추론된 이름의 예제
+
+```javascript
+var notNamed = function () {
+  //..
+};
+
+var config = {
+  cb: function () {
+    //..
+  },
+};
+
+notNamed.name; // notNamed
+config.cb.name; // cb
+```
+
+- JS는 이름을 추론함, 위 예제처럼 함수에 명시적으로 기명하지 않아도 생성되는 이름을 추론된 이름 이라고 함
+- 하지만 이 추론된 이름은 모든 문제를 해결할 수 없음
+
+#### A.2.2 이름이 없다면?
+
+- 스택 트레이스에는 당연히 anonymous보다는 추론을 통해 붙여진 이름이 나타나는 게 훨씬 좋음
+
+▣ 추론된 이름이 불완전함을 보여주는 예제
+
+```javascript
+function ajax(url, cb) {
+  console.log(cb.name);
+}
+
+ajax('some.url', function () {
+  //...
+});
+
+// ""
+```
+
+- 콜백으로 전달되는 익명 함수 표현식에는 추론된 이름이 없음
+- 따라서 cb.name은 빈 문자열이 됨
+- 함수 표현식, 특히 익명 함수 표현식은 대부분 콜백 인자로 사용됨
+- 이 경우 대부분 이름 추론이 작동하지 않음
+
+▣ 추론된 이름이 불완전함을 보여주는 예제 2
+
+```javascript
+var config = {};
+
+config.cb = function() {
+  //...
+}
+
+config.cb.name; // ""
+
+var [ noName ] =[ fucntion(){} ];
+noName.name; // ""
+```
+
+- 함수 표현식을 단순 할당이 아닌 다른 형태로 하는 경우, 대다수의 이름 추론이 실패함
+- 이름 추론이 정상 동작해서 함수 표현식에 이름이 붙더라도 완전한 기명 함수로 인정되지 않음
+
+#### A.2.3 나는 누구일까요?
+
+- 렉시컬 이름 식별자가 없는 경우, 함수는 내부적으로 자기 자신을 참조할 방법이 없음
+- 자기 참조는 재귀나 이벤트를 처리하는 작업에서 매우 중요
+
+▣ 자기 참조 예제
+
+```javascript
+// 작동하지 않음
+runOperation(fucntion(num) {
+  if (num <= 1) return 1;
+  return num * oopsNoNameToCall(num -1); // 재귀를 시켜야 하나 익명함수라 재귀를 시킬 수 없음
+});
+
+// 역시 작동하지 않음
+btn.addEventListener("click", function() {
+  console.log("한 번 클릭 시 응답해야 함");
+  btn.removeEventListener("click", oopsNoNameHere);
+})
+
+//-------------------------------------------------------------//
+
+// >>> runOperation 정상 동작으로 리팩터링
+function runOperation(cb, num) {
+  console.log(cb(num));
+}
+
+function factorial(num) {
+  if (num <= 1) return 1;
+  return num * factorial(num -1);
+}
+
+runOperation(factorial, 5); // 120
+
+// >>> Button 이벤트 정상 동작 리팩터링
+function onClickEvent() {
+  console.log("한 번 클릭 시 응답해야 함");
+  btn.removeEventListener("click", onClickEvent);
+}
+
+btn.addEventListener("click", onClickEvent);
+```
+
+- 함수에 렉시컬 이름을 제공하면 함수는 자신을 참조할 수 있는 안정적인 방법을 가짐
+- 위 예시에서 runOperation과 addEventListener의 콜백 함수는 렉시컬 이름 식별자가 없어서 자신을 참조하지 못해 문제가 발생함
+- 다른 방법으로 주변 스코프에 함수를 참조하는 변수를 선언하는 방법을 이용할 수 있으나, 이 변수는 그 주변 스코프에 의해 제어되므로(재할당이 가능) 함수가 자체적으로  
+  자기 자신을 참조하는 것만큼 신뢰성이 높지 않음
+
+#### A.2.4 이름은 설명입니다
+
+- 함수의 이름을 생략하면 코드 리뷰 시 함수의 목적을 빠르게 파악하기 어려움
+- 이것이 저자가 생각할 때 기명 함수를 써야 하는 가장 중요한 이유라고 함
+- JS 엔진은 이름을 신경쓰지 않지만, 코드를 읽는건 사람임
+- 적절한 이름은 함수의 목적을 명확하고 간결하게 나타낼 수 있으며 읽을 때도 어떤 목적의 함수인지 파악하기 좋음
+- 이는 map()이나 then() 문같이 한 줄 짜리 함수도 예외는 아니라고 생각한다고 함
+- 중요!! 이름을 지정하지 않으면 프로그램 가독성이 떨어지고, 디버깅하기 어렵고, 나중에 확장 및 유지 보수가 어려워짐
+
+#### A.2.5 화살표 함수
+
+- 화살표 함수는 (드물게) 이름 추론을 통해 이름이 붙더라도 항상 익명임
+- 일반 함수를 대체하는 용도로 화살표 함수를 사용하지 말 것(권고)
+- 더 간결할 수는 있지만 간결함으로 인해 코드의 내용을 빠르게 분석하는 데 도움을 주는 시각적인 주요 구분 기호가 생략되는 대가를 치러야 함
+- 화살표 함수의 목적은 타이핑을 줄이는게 아님, 렉시컬 this 를 위함임
+- 화살표 함수의 this는 렉시컬 스코프에 의해 결정되며 화살표 함수 자체는 this를 가지지 않음
+- 화살표 함수는 this를 다른 렉시컬 변수처럼 취급
+  ◎ this를 렉시컬 변수처럼 사용해야 하는 경우의 예
+
+1. var self = this
+2. 내부 함수 표현식에 .bind(this)
+
+- 위와 같은 형태를 사용하는 것보다 화살표 함수가 확실히 더 나음
+
+#### A.2.6 IIFE 변형
+
+```javascript
+(function () {
+  //이렇게 하지마세욤
+})();
+
+(function doThisInstead() {
+  // 써야 한다면 이렇게 쓰셈!
+})();
+```
+
+- IIFE도 사용한 목적에 따라 이름을 지어줄 필요가 있음
+- IIFE는 일반적으로 함수 표현식 주위에 ()를 배치해 정의함
+- 이 방식이 IIFE를 정의하는 유일한 방법은 아님
+- 가장 바깥을 ()로 묶는 이유는 JS 파서가 function 키워드를 만났을 때 함수 선언문으로 해석하지 않기 때문
+
+▣ IIFE의 또 다른 정의 방법 예제
+
+```javascript
+!(function thisIsAnIIFE() {
+  // ..
+})();
+
++(function soIsThisOne() {
+  //..
+})();
+
+~(function andThisOneToo() {
+  //..
+})();
+```
+
+- !, +, ~등 다양한 단항 연산자를 function 앞에 놓아 표현식으로 만들수도 있음, 이렇게 하면 마지막 () 호출이 유효하므로 IIFE가 됨
+- 필자의 경우 독립형 IIFE를 정의할 땐 void 단항 연산자를 사용하는걸 좋아한다고함
+- 어쨌든 중요한건 이름을 붙여야 한다는 것!
+
+#### !! A.2 정리
+
+1.  이름 추론은 불완전하다.
+2.  렉시컬 이름을 사용하면 자기 참조가 가능하다.
+3.  이름은 설명을 제공하기 때문에 유용하다.
+4.  화살표 함수에는 렉시컬 이름이 없다.
+5.  IIFE에도 이름이 필요하다.
