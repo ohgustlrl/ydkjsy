@@ -4905,3 +4905,140 @@ getLabels([14, 73, 112, 6]);
 - 그럼 비동기 콜백과 IIF는 어떤 관계일까? 비동기 콜백은 동기가 아닌 비동기적으로 호출되는 IIF 라고 볼 수 있음
 
 #### A.6.3 동기 클로저
+
+- 동기적 콜백을 IIF라고 명명했는데 이것은 클로저의 예일까요?
+- IIF는 분명 외부 스코프의 변수를 참조해야만 클로저일 가능성이 있음
+- 앞서 언급한 formatIDLabel() IIF는 자체 스코프 외부의 변수를 참조하지 않으므로 확실히 클로저가 아님
+
+```javascript
+/**
+ *  외부 참조가 있는 IIF의 예시
+ * */
+
+function printLabels(labels) {
+  var list = document.getElementById("labelsList");
+
+  labels.forEach(
+    function renderLabel(label) {
+      var li = document.createElement("li");
+      li.innerText = label;
+      list.appendChild(li);
+    }
+  );
+}
+
+```
+
+- 내부의 renderLabel() IIF는 자신을 감싸는 스코프에 있는 list를 참조하므로 예시의 IIF도 클로저의 후보가 될 수 있음
+- 하지만 클로저를 정의하는 모델이나 개념 방식이 영향을 끼침
+- 즉, 클로저를 어떻게 정의하느냐에 따라 IIF가 클로저로 간주될 수 있는지가 결정됨
+
+if - renderLabel()이 다른 곳으로 전달되고 그곳에서 호출된다면 renderLabel()은 클로저를 실행하는 것, 왜냐하면 클로저는 원래 스코프 체인에 접근하게 하는 역할을 하기 때문임
+else - 7장에서 설명한 대체 개념 모델에서 생각했던 것처럼 renderLabel()이 자신이 처음 생성된 스코프에 그대로 남아 있고 오직 renderLabel() 함수 참조만 forEach()에 전달된다면 renderLabel()이 자신의 원래 스코프 체인을 보존하기 위해 클로저가 필요한지는 다시 생각해봐야 함
+
+- renderLabel()이 자신의 원래 스코프에서 동기적으로 실행되는 경우는 단순한 렉시컬 스코프의 일부일 뿐, 클로저가 필요하지 않음
+
+```javascript
+/**
+ *  위 주장을 이해하기 위한 예시
+ * */
+
+function printLabels(lables) {
+  var list = document.getElementById("labelsList");
+
+  for (let label of labels) {
+    // renderLabel() 호출부는 자체 스코프에서 일반적인 함수를 호출하는 것뿐이지 클로저를 형성하지는 않음
+    renderLabel(label);
+  }
+
+  function renderLabel(label) {
+    var li = document.createElement("li");
+
+    li.innerText = label;
+    list.appendChild(li);
+  }
+}
+```
+
+- 두 버전의 printLabels()는 본질적으로는 동일함
+- 후자는 관찰 가능성이라는 관점에서 확실히 클로저의 예가 아님
+- 그냥 평범한 렉시컬 스코프 함수 호출에 불과함
+
+#### A.6.4 클로저 지연
+
+```javascript
+/**
+ * 수동 커링의 흥미로운 시나리오
+ * */
+
+function printLabels(lables) {
+  var list = document.getElementById("labelsList");
+  var renderLabel = renderTo(list);
+
+  // 이번엔 확실히 클로저를 사용함!
+  labels.forEach( renderLabel );
+
+  function renderTo(list) {
+    return function createLabel(label) {
+      var li = document.createElement("li");
+      li.innerText = label;
+      list.appendChild(li);
+    };
+  }
+}
+```
+- renderLabel에 할당한 내부 함수 createLabel()은 list를 에워싸고 있으므로 확실히 클로저라고 할 수 있음
+- 이 예시는 지연되는 시간이 아주 잠깐인데 지연 시간이 길어지더라도 클로저가 호출과 호출 사이를 연결하는 가교 역할을 하기 때문에 변수 기억에는 문제가 없음
+
+### A.7 클래식 모듈 변형
+
+```javascript
+var StudentList = (function defineModule(Student) {
+  var elems = [];
+
+  var publicAPI = {
+    renderList() {
+      // ...
+    }
+  };
+
+  return publicAPI;
+})(Student)
+```
+
+- 예시에서는 Student(또 다른 모듈 인스턴스)에 의존하고 있음
+- 예시와 같은 모듈 구현 패턴은 알아두면 조금만 변형해서 사용해도 되기 때문에 유용함
+- 아래 3가지를 통해 응용할 수 있음
+
+1. 모듈은 자체 API에 대한 정보를 아는 것이 좋습니다.
+2. 화려한 모듈 로더를 사용하더라도 결국 클래식 모듈일 뿐입니다.
+3. 일부 모듈은 환경에 상관없이 동일하게 작동해야 합니다.
+
+#### A.7.1 내 API는 어디에 있나요?
+
+- 위의 첫 번째 힌트에 대한 의미를 알아봄
+
+```javascript
+/**
+ * publicAPI를 정의하고 사용하지 않는 클래식 모듈의 예제
+ * */
+
+var StudentList = (function defineModules(Student){
+  var elems = [];
+
+  return {
+    renderList() {
+      // ...
+    }
+  };
+})(Student);
+```
+
+- 대신 모듈의 공개 API 역할을 하는 객체를 내부 publicAPI 변수에 저장하지 않고 직접 반환함, 대부분의 클래식 모듈은 이런 방식으로 정의 됨
+- publicAPI 변수를 따로 두는 형태를 선호하는 데 그 이유는 두 가지가 있음
+
+1. publicAPI라는 이름 자체가 객체의 목적을 명확하게 해주므로 가독성을 높여줌
+2. 반환할 외부 공개용 API 객체를 참조하는 내부 변수 publicAPI를 따로 두면 모듈이 살아 있는 동안 API에 접근하거나 수정해야 할 때 유용함
+
+- 모듈 내부에서 노출된 공개 함 수 중 하나를 호출하고 싶을 수 있음, 또는 특정 조건에 따라 메서를 추가, 삭제하거나 노출된 프로퍼티의 값을 업데이트 하고 싶을 수도 있음
+- 이유가 무엇이든 간에 자신의 API에 접근하기 위한 참조를 유지 보수하지 않는다는 건 조금 어리석은 것 같다고 생각함
