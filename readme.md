@@ -4895,7 +4895,7 @@ getLabels([14, 73, 112, 6]);
 
 - DI(의존성 주입)이란 ? 필요한 기능이나 기능의 일부를 프로그램의 다른 부분으로 전달하는 것
 - IoC(제어의 역전)이란 ? DI와 유사한 개념, 프로그램의 현재 영역에서 일어나는 일을 제어하는 대신 제어권을 프로그램의 다른 부분으로 넘기는 것을 의미함
-- 참고로 파틴 파울러는 프레임워크와 라이브러리의 차이를 IoC로 설명함, 라이브러리를 사용할 때는 라이브러리의 함수를 호출하지만, 프레임워크를 사용할 때는 프레임워크가 개발자가 작성한 함수를 호출하기 때문(위에서 얘기한 제어권에 관한 그냥 그런 얘기)
+- 참고로 마틴 파울러는 프레임워크와 라이브러리의 차이를 IoC로 설명함, 라이브러리를 사용할 때는 라이브러리의 함수를 호출하지만, 프레임워크를 사용할 때는 프레임워크가 개발자가 작성한 함수를 호출하기 때문(위에서 얘기한 제어권에 관한 그냥 그런 얘기)
 - 마틴 파울러가 누구? 99년도 리팩터링 이라는 책을 통해서 코드 리팩터링을 널리 보급한 양반, 04년에는 아키텍처 패턴의 하나인 프레젠테이션 모델을 선보인 양반..
 
 - 어쩄든 이런 내용들을 통해 동기적 콜백을 대신해 DI 또는 IoC라 불러도 되지 않나?라고 생각한다고 함(저자의 의견)
@@ -5042,3 +5042,78 @@ var StudentList = (function defineModules(Student){
 
 - 모듈 내부에서 노출된 공개 함 수 중 하나를 호출하고 싶을 수 있음, 또는 특정 조건에 따라 메서를 추가, 삭제하거나 노출된 프로퍼티의 값을 업데이트 하고 싶을 수도 있음
 - 이유가 무엇이든 간에 자신의 API에 접근하기 위한 참조를 유지 보수하지 않는다는 건 조금 어리석은 것 같다고 생각함
+
+#### A.7.2 AMD
+
+- 클래식 모듈 형식의 또 다른 변형은 몇 년 전에 인기를 끌었던 AMD(비동기 모듈 정의) 스타일 모듈임, 이 스타일은 RequireJS를 쓰면 쉽게 구현 가능
+
+```javascript
+/**
+ * AMD 모듈 예시
+ * */
+
+define([ "./Student" ], function StudentList(Student) {
+  var elems = [];
+
+  return {
+    renderList() {
+      // ...
+    }
+  };
+});
+```
+
+- 여기서 StudentList()는 전형적인 모듈 팩토리 함수임
+- RequireJS에서 제공하는 define()의 내부에서 StudentList() 함수가 실행되고, 이때 종속성으로 선언된 다른 모듈 인스턴스들이 StudentList()에 전달됨
+- StudentList()의 반환값은 모듈의 공개 API를 나타내는 객체이며 AMD도 클래식 모듈과 동일한 원칙(클로저 작동 방식 포함)을 기반으로 작동함
+
+#### A.7.3 UMD
+
+- UMD는 구체적이고 정확한 형식이라기보다 비슷한 형식들의 모음에 가까움
+- AMD는 브라우저, AMD 스타일 로더, Node js에서 모듈을 읽어들일 때, 별도의 변환 도구 없이 더 나은 상호 운용성을 보장하기 위해 설계됨
+
+```javascript
+/**
+ * 일반적인 UMD 구조의 예시
+ * */ 
+
+(function UMD(name, context, definition) {
+  // AMD 스타일일 경우
+  if (
+    typeof define === "function" && define.amd
+  ) {
+    define(definition);
+  }
+
+  // NodeJS일 경우
+
+  else if (
+    typeof module !== 'undefined" && moudle.exports
+  ) {
+    module.exports = definition(name, context);
+  }
+
+  // 독립형 브라우저 스크립트일 경우
+
+  else {
+    context[name] = definition(name, context);
+  }
+})("StudentList", this, function DEF(name, context) {
+  var elem = [];
+
+  return {
+    renderList() {
+      //...
+    }
+  }
+})
+```
+
+- UMD는 IIFE를 사용해 모듈을 정의함
+- 일반적인 IIFE와 다른점은 상단에 있는 모듈이 로드되는 환경을 감지하는 역할을 하는 조건문이 연속적으로 포함되어 있다는 점
+- UMD 패턴에서 사용하는 IIFE 는 보통 name, context, definition이라는 세 개의 인자를 받음
+- "StudentList", this, 다른 함수 표현식이 name, context, definition 에 매칭 됨
+- name : 전역 변수르 정의한 모듈의 이름
+- context : 모듈이 name으로 정의될 때 사용하는 전역 컨텍스트를 의미, 보통은 window 객체임
+- definition : 모듈의 실제 내용을 정의함, 이것은 함수이며 해당 definition을 호출하면 모듈 정의를 가져올 수 있음, definition은 클래식 모듈 포맷을 따름
+- ES 모듈이 빠르게 대중화되고 있지만 지난날동안 사람들은 클래식 모듈을 일부 변형해 모듈을 만들었기에 UMD 모듈을 읽고 이해하는 능력은 매우 중요함
